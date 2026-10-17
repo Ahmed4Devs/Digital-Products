@@ -1,0 +1,13 @@
+# Normalize line endings so shell scripts mounted into Linux containers never get CRLF.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.woff binary
+*.woff2 binary
+*.svg text eol=lf
