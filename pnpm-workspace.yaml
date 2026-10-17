@@ -1,0 +1,4 @@
+# pnpm 11 blocks dependency lifecycle scripts unless they are reviewed here.
+allowBuilds:
+  # Only verifies that the prebuilt native binding (installed via optionalDependencies) exists.
+  unrs-resolver: false

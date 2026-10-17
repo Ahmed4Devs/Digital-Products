@@ -42,6 +42,7 @@
 11. Pre-commit hook (`simple-git-hooks`): lint, typecheck, unit tests.
 12. `README.md`: prerequisites, setup, running services, scripts, ports.
 13. `pnpm audit`.
+
 - **[T]** env schema unit tests; health route integration test against the real DB; E2E smoke.
 - **Exit:** app starts, `/api/health` reports DB OK, lint/typecheck/tests pass.
 
@@ -58,6 +59,7 @@
 9. Emoji: `lib/emoji` server-side parser → `EmojiText` server component that replaces emoji with self-hosted Twemoji SVGs (`public/twemoji/*.svg`, copied by a script from the pinned `@twemoji/svg` package), `alt` = original emoji, sized to `1em`, `loading="lazy"`, `decoding="async"`.
 10. Direction lint guard: ESLint `no-restricted-syntax` rule rejecting physical classes (`ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-`, `text-left`, `text-right`, `border-l`, `border-r`, `rounded-l/r`…) in `className` string literals.
 11. `bdi` helper component for bidirectional fragments; LTR-forced inputs for email/password/URL.
+
 - **[T]** unit: formatting (digits, calendar, currency), emoji renderer (start/middle/end of Arabic & English sentences, ZWJ sequences, flags, keycaps), messages key parity. E2E: smoke + visual snapshots for `ar/rtl` × `en/ltr` × `light` × `dark`; axe on home in all four combos.
 - **Exit:** base layout renders correctly in all four combinations.
 
@@ -82,6 +84,7 @@
 9. Account & admin layouts verify the session on the server; admin returns 404 for non-owners.
 10. Better Auth error codes → translated messages (`auth` namespace).
 11. Owner seed (`prisma/seed.ts`) from env (`OWNER_USERNAME`, `OWNER_EMAIL`, `OWNER_PASSWORD`, `OWNER_FIRST_NAME`, `OWNER_LAST_NAME`) + default `StoreSetting`; idempotent.
+
 - **[T]** integration: guards, owner-only username sign-in, customer blocked from admin, owner blocked from email/magic-link sign-in, unverified customer blocked, role not settable via sign-up/update. E2E: sign-up → verify via Mailpit API → password sign-in → magic-link sign-in → password reset (other sessions revoked).
 - **Exit:** every auth flow works locally; customers cannot reach anything under `/admin`.
 
@@ -95,6 +98,7 @@
 6. `next/image` with AVIF/WebP, `remotePatterns` for the public images bucket only; `priority` on the LCP image.
 7. SEO: translated metadata, canonical, `hreflang` alternates + `x-default`, `sitemap.ts` (both locales, excludes admin/account), `robots.ts`.
 8. Slug utility (emoji stripped, Arabic-safe), grapheme-length Zod helper (`Intl.Segmenter`).
+
 - **[T]** unit: slugs, grapheme length, fallback, query param schemas. E2E: browse home → category → product in both locales.
 - **Exit:** catalog fully browsable; static where intended (build output verified).
 
@@ -110,6 +114,7 @@
 8. Categories: create, edit, reorder.
 9. Exchange-rate setting.
 10. Every mutation: `requireOwner` → Zod → transaction → `AuditLog` row (before/after diff) → `updateTag`.
+
 - **[T]** integration: owner-only enforcement for every action, upload validation (bad MIME, oversize, spoofed key), audit rows. E2E: create → publish → visible in store immediately.
 - **Exit:** a product published from the admin appears in the store immediately.
 
@@ -123,6 +128,7 @@
 6. `/api/webhooks/[provider]`: raw body → verify → `PaymentEvent` idempotency (unique `(provider, providerEventId)`) → re-fetch from provider → amount + currency match → fulfil in one transaction → respond fast.
 7. `/checkout/result`: polls order status (never mutates it), redirects to My Purchases when paid.
 8. Scheduled job (route protected by a secret, or CLI script) expiring stale `pending` orders.
+
 - **[T]** unit: money, coupons, tax, cart signing. Integration: each provider × (valid, duplicate, amount mismatch, currency mismatch, bad signature). E2E: checkout with the fake adapter. Documented sandbox runs via tunnel (`docs/SANDBOX_TESTING.md`).
 - **Exit:** orders become `paid` only through verified webhooks.
 
@@ -135,12 +141,14 @@
 5. Free products ("Get it" → zero-total paid order + entitlement, no gateway).
 6. Refunds (admin → provider API, or provider webhook) → `refunded` + entitlements revoked.
 7. Orders page (`/account/orders`) separate from My Purchases.
+
 - **[T]** integration: ownership, revocation, rate limit boundary, free product, refund webhook. E2E: purchase → download → exceed limit → refund removes access.
 - **Exit:** a complete test purchase through each gateway ends with a successful download.
 
 ## Phase 8 — Remaining Dashboard → tag `phase-08-dashboard`
 
 Overview metrics; orders (filters, details, resend receipt, refund, grant/revoke entitlement); customers (list, purchases, ban); coupons (CRUD, deactivate, usage); all settings (bilingual store details, logos, support email, rate, tax, gateways, downloads per minute, legal content); audit log viewer. Account page: change email (re-verification), change password, delete account.
+
 - **[T]** integration + E2E for every owner action, including authorization failures for non-owners.
 
 ## Phase 9 — Quality and Security Hardening → tag `phase-09-hardening`
@@ -157,11 +165,11 @@ Multi-stage non-root `Dockerfile`; production env template; health endpoint hard
 
 Proposed conservative defaults are listed; they are applied unless the owner decides otherwise. Answers are needed **before the phase noted**.
 
-| # | Topic | Needed before | Proposed default |
-|---|---|---|---|
-| Q1 | Account deletion vs. financial records | Phase 3 (schema) | Anonymize instead of hard delete: wipe PII, delete sessions/credentials, revoke entitlements, keep orders (with snapshots) for accounting. |
-| Q2 | Tax mode & Paddle | Phase 6 | Tax is exclusive (added on top of subtotal − discount) and **not** applied to Paddle orders, because Paddle is Merchant of Record and adds tax itself. |
-| Q3 | Coupons with a fixed SAR price | Phase 6 | SAR line price = fixed override ?? round-half-up(USD × rate); percent coupon applies to the SAR subtotal; fixed (USD) coupon is converted at the same rate and capped at the subtotal. |
-| Q4 | Coupons that bring the total to 0 | Phase 6 | Treated like a free order: fulfilled server-side without a gateway. |
-| Q5 | Totals below a gateway's minimum charge | Phase 6 | Reject at checkout with a translated message; the customer can choose another gateway. |
-| Q6 | Refund granularity | Phase 7 | Full-order refunds only (partial refunds out of scope for v1). |
+| #   | Topic                                   | Needed before    | Proposed default                                                                                                                                                                       |
+| --- | --------------------------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Q1  | Account deletion vs. financial records  | Phase 3 (schema) | Anonymize instead of hard delete: wipe PII, delete sessions/credentials, revoke entitlements, keep orders (with snapshots) for accounting.                                             |
+| Q2  | Tax mode & Paddle                       | Phase 6          | Tax is exclusive (added on top of subtotal − discount) and **not** applied to Paddle orders, because Paddle is Merchant of Record and adds tax itself.                                 |
+| Q3  | Coupons with a fixed SAR price          | Phase 6          | SAR line price = fixed override ?? round-half-up(USD × rate); percent coupon applies to the SAR subtotal; fixed (USD) coupon is converted at the same rate and capped at the subtotal. |
+| Q4  | Coupons that bring the total to 0       | Phase 6          | Treated like a free order: fulfilled server-side without a gateway.                                                                                                                    |
+| Q5  | Totals below a gateway's minimum charge | Phase 6          | Reject at checkout with a translated message; the customer can choose another gateway.                                                                                                 |
+| Q6  | Refund granularity                      | Phase 7          | Full-order refunds only (partial refunds out of scope for v1).                                                                                                                         |
