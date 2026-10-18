@@ -36,7 +36,7 @@
 9. Health check route `app/api/health/route.ts` (DB `SELECT 1`, generic JSON, `no-store`, 503 when DB is down).
 10. Testing toolchain:
     - Vitest with `unit` and `integration` projects, V8 coverage, `server-only` shim, alias `@/`.
-    - Integration DB helper that resets the **separate test database** before each run (`prisma migrate reset --force` against `DATABASE_URL_TEST`).
+    - Integration DB helper that resets the **separate test database** before each run (drop and recreate the `public` schema, then `prisma migrate deploy`; local `_test` databases only — owner-approved, see DECISIONS).
     - Playwright (Chromium) with `webServer`, base E2E smoke test hitting `/api/health` and `/`.
     - axe-core Playwright package installed (used from Phase 2).
 11. Pre-commit hook (`simple-git-hooks`): lint, typecheck, unit tests.
