@@ -10,3 +10,4 @@ pnpm-lock.yaml
 prisma/migrations
 context
 components/ui
+public/twemoji

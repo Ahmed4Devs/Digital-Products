@@ -22,14 +22,14 @@ export default defineConfig({
         extends: true,
         test: {
           name: "unit",
-          include: ["tests/unit/**/*.test.ts"],
+          include: ["tests/unit/**/*.test.{ts,tsx}"],
         },
       },
       {
         extends: true,
         test: {
           name: "integration",
-          include: ["tests/integration/**/*.test.ts"],
+          include: ["tests/integration/**/*.test.{ts,tsx}"],
           globalSetup: ["tests/integration/global-setup.ts"],
           setupFiles: ["tests/integration/setup-env.ts"],
           // Files share one database; run them one at a time.
