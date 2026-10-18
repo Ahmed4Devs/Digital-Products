@@ -18,6 +18,15 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "test-results/**",
   ]),
+  {
+    rules: {
+      // `_`-prefixed names and rest siblings are intentional omissions.
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;
