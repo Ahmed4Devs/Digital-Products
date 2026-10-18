@@ -14,6 +14,11 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
     "services:up": "docker compose --env-file .env.local up -d --build --wait",
     "services:down": "docker compose --env-file .env.local down",
     "services:logs": "docker compose --env-file .env.local logs -f"

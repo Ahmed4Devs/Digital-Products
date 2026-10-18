@@ -1,0 +1,11 @@
+// Prisma ORM 7. Connection URLs live in prisma.config.ts, not here.
+// The full data model (spec Section 9) lands in Phase 3.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
