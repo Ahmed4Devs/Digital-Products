@@ -93,13 +93,13 @@ Follow these rules for the entire project.
 | UI runtime | React and React DOM | **19.3.x** | Ships with Next.js 16.4. |
 | Styling | Tailwind CSS | **4.3.x** | CSS-first configuration via `@theme`. No `tailwind.config.js`. |
 | Components | shadcn/ui (CLI v4) using **Base UI** primitives | Latest | Initialize with **RTL enabled** (`rtl: true` in `components.json`) so components install with logical classes. |
-| Primitives | Base UI | Latest stable | Use its direction provider. Popups use `inline-start` / `inline-end` sides so they flip with direction. |
+| Primitives | Base UI — package **`@base-ui/react`** | `^1` (verify the latest with `npm view`) | Never use the deprecated pre-1.0 package `@base-ui-components/react`. Use its direction provider. Popups use `inline-start` / `inline-end` sides so they flip with direction. |
 | Database | PostgreSQL | **18.x** | Run in Docker locally. Use the native `uuidv7()` function for IDs. |
-| ORM | Prisma ORM | **7.10.x — pin to major version 7** | **Warning:** installing `prisma` without a version now resolves to the **Prisma 8 release candidate**. Pin `prisma`, `@prisma/client`, and the PostgreSQL driver adapter to `^7`. Use `prisma.config.ts`, the `prisma-client` generator with an explicit output directory (`generated/prisma`), and the PostgreSQL driver adapter with a connection pool. |
+| ORM | Prisma ORM | **`~7.10.0`** (any 7.10.x patch) | **Warning:** installing `prisma` without a version now resolves to the **Prisma 8 release candidate**. Pin `prisma`, `@prisma/client`, and `@prisma/adapter-pg` to `~7.10.0`. Never allow 8.x. Use `prisma.config.ts`, the `prisma-client` generator with an explicit output directory (`generated/prisma`), and the PostgreSQL driver adapter with a connection pool. |
 | Authentication | Better Auth | **1.7.x** | Prisma adapter; email and password; `username` plugin (owner only); `magicLink` plugin (customers); the Next.js cookies plugin so Server Actions can set cookies. |
 | Internationalization | next-intl | Latest | Locale routing, messages, and Intl formatting. |
 | Theming | next-themes | Latest | Class strategy, no flash on load. |
-| Validation | Zod | **4.x** | At every input boundary. |
+| Validation | Zod | **`^4.6.0`** | Zod 4 APIs only. At every input boundary. |
 | Email | React Email + **Resend** | Latest | Use **Mailpit** to capture email in development. |
 | File storage | S3-compatible SDK | Latest | **MinIO** locally, **Cloudflare R2** in production. |
 | Emoji | **Twemoji** (maintained `jdecked/twemoji` fork) + a server-side parser | Latest | Graphics licensed CC-BY 4.0 (attribution required); code licensed MIT. |
@@ -160,7 +160,7 @@ Use **OWASP ASVS Level 2** and the **OWASP Top 10** as the minimum baseline.
 
 **HTTP and browser security**
 
-- Strict **Content Security Policy** with nonces, allowing only the origins required by Moyasar, Paddle, PayPal, and Turnstile.
+- A **Content Security Policy** following the two-policy strategy in **Section 17.5 §2**: per-request nonces on dynamic routes, and a static policy with no third-party script origins on prerendered routes.
 - HSTS, `frame-ancestors 'none'`, `X-Content-Type-Options: nosniff`, a strict `Referrer-Policy`, and a restrictive `Permissions-Policy`.
 - **CSRF:** rely on Server Actions' built-in origin checks and Better Auth's protections. No state-changing GET requests.
 
@@ -270,7 +270,7 @@ Tests are written **with each feature**, not saved for the end.
 ### 6.2 Owner (Exactly One)
 
 - **Fields:** username, first name, last name, password.
-- Better Auth requires an email on every user. Store the owner's **real email for password recovery only**; it is never used to sign in.
+- Better Auth requires an email on every user. Store the owner's **real email for password recovery only**; it is never used to sign in. An offline recovery script on the server is also provided (Section 17.5 §7).
 - **Sign-in:** at `/[locale]/admin/sign-in` with **username and password** (via the `username` plugin). This page is not linked from the storefront and must **reject any account whose role is not `owner`**.
 - **Creation:** only through a seed script that reads the owner's credentials from environment variables. There is no UI to create an owner or promote a user.
 - **Role field:** `customer` (default) or `owner`. It cannot be set through any sign-up or profile input.
@@ -406,13 +406,14 @@ Enable Better Auth's session cookie cache to reduce database lookups.
 | `Session` / `Account` / `Verification` | Sessions, credentials, verification and magic-link tokens (managed by Better Auth) | Generated from the Better Auth configuration; never edit by hand |
 | `Category` | Product grouping | slug (unique), nameAr, nameEn, sortOrder |
 | `Product` | Digital product | slug (unique), titleAr/En, shortDescriptionAr/En, descriptionAr/En (sanitized rich text), **priceUsdCents**, fixedPriceSarHalalas (optional override), compareAtPriceUsdCents (optional), status (`draft` / `published` / `archived`), cover image, gallery, categoryId, featured, SEO title and description in both languages |
-| `ProductFile` | File in the private bucket | productId, storageKey, fileName, sizeBytes, mimeType, version, checksum |
-| `Order` | A purchase | human-readable order number, userId, status (`pending` / `paid` / `failed` / `refunded` / `expired`), subtotalUsdCents, discountUsdCents, taxUsdCents (optional), totalUsdCents, chargedCurrency, chargedAmountMinor, exchangeRateUsed, couponId, locale, provider, providerReference, paidAt |
+| `ProductFile` | File in the private bucket | productId, storageKey, fileName, sizeBytes and checksum (both read from storage, never from the client), mimeType, version, supersededAt (never hard-deleted once downloaded) |
+| `Order` | A purchase | human-readable order number, userId (**nullable**, `onDelete: SetNull`), **customerEmailSnapshot**, status (`pending` / `paid` / `failed` / `refunded` / `expired`), subtotalUsdCents, discountUsdCents, taxUsdCents (optional, store tax — never for Paddle), totalUsdCents, chargedCurrency, chargedAmountMinor, providerTaxMinor and providerTaxMode (Paddle), exchangeRateUsed, couponId, locale, provider, providerReference, paidAt |
 | `OrderItem` | Line item | orderId, productId, **snapshot** of titleAr/En and unit price at purchase time |
 | `PaymentEvent` | Webhook log and idempotency guard | provider, providerEventId (unique per provider), type, payload (JSONB), processedAt |
-| `Entitlement` | A customer's right to a product (powers My Purchases) | userId, productId, orderItemId, downloadCount (statistics only), revokedAt; **unique (userId, productId)** |
-| `DownloadLog` | One row per download; source of the per-minute rate limit | entitlementId, fileId, createdAt, ipHash, userAgent |
-| `Coupon` | Discounts | code (unique), type (`percent` / `fixed`), value, minSubtotalUsdCents, usageLimit, usedCount, startsAt, endsAt, active |
+| `Entitlement` | A customer's right to a product (powers My Purchases) | userId, productId, orderItemId, downloadCount (statistics only), revokedAt; **unique (userId, productId)**; written with **upsert**, never plain create (Section 17.5 §4) |
+| `DownloadLog` | One row per download; source of the per-minute rate limit | entitlementId (`onDelete: Cascade`), fileId, createdAt, ipHash, userAgent |
+| `Coupon` | Discounts | code (unique), type (`percent` / `fixed`), value, minSubtotalUsdCents, usageLimit, usedCount, reservedCount, allowMultiplePerCustomer (default false), startsAt, endsAt, active |
+| `CouponRedemption` | Per-customer coupon tracking and reservations | couponId, userId (nullable, `onDelete: SetNull`), orderId, status (`reserved` / `redeemed` / `released`), expiresAt; partial unique index on (couponId, userId) for `reserved` and `redeemed` rows unless the coupon allows multiple uses per customer |
 | `StoreSetting` | Singleton store settings | storeNameAr/En, logos (light/dark), supportEmail, **usdToSarRate (default 3.75)**, taxEnabled (default false), taxRate, vatNumber, enabled gateways, **downloadsPerMinute (default 5)**, legal page content in both languages |
 | `AuditLog` | Owner actions | actorId, action, entity, entityId, diff (JSONB), createdAt |
 
@@ -436,8 +437,8 @@ Enable Better Auth's session cookie cache to reduce database lookups.
 5. **Order creation:** create an `Order` with status `pending` and item snapshots, then create the payment with the provider, using the order ID as the reference (and as the idempotency key where supported).
 6. **Payment:** the customer pays inside the provider's own UI. Card data never touches our servers.
 7. **Return page:** shows "processing" and polls the order status, then redirects to My Purchases once the order is paid. It **never** marks an order as paid.
-8. **Webhook:** verify signature → reject duplicates via `PaymentEvent` → re-fetch the payment from the provider API → match amount and currency to the order.
-9. **Fulfilment, in one database transaction:** set the order to `paid`, create one `Entitlement` per item, increment coupon usage, and record the `PaymentEvent`.
+8. **Webhook:** verify signature → reject duplicates via `PaymentEvent` → re-fetch the payment from the provider API → match amount and currency to the order (for Paddle, match line-item prices as defined in Section 17.5 §3).
+9. **Fulfilment, in one database transaction:** set the order to `paid`, upsert one `Entitlement` per item (Section 17.5 §4), convert the coupon reservation to `redeemed` (Section 17.5 §9), and record the `PaymentEvent`.
 10. **After commit:** send a receipt email via Resend in the order's language, containing a link to My Purchases (no direct download links). Invalidate the relevant caches.
 
 ### 10.2 Payment Gateways
@@ -447,7 +448,7 @@ Implement a single `PaymentProvider` interface with four operations: **create pa
 | Gateway | Role | Charge currency | Webhook verification | Notes |
 |---|---|---|---|---|
 | **Moyasar** | Primary for customers in Saudi Arabia: mada, Visa, Mastercard, Amex, Apple Pay, STC Pay | **SAR** (converted from USD) | Shared webhook secret | Apple Pay requires domain registration. STC Pay does not work with test keys. |
-| **Paddle** | International cards. Acts as Merchant of Record and handles tax for its sales | **USD** | `Paddle-Signature` header | Prefill the customer's email from the account. Paddle reviews the website (pricing, terms, refund policy) before going live. |
+| **Paddle** | International cards. Acts as Merchant of Record and handles tax for its sales | **USD** | `Paddle-Signature` header | Prefill the customer's email from the account. Tax mode and amount matching follow Section 17.5 §3. Paddle reviews the website (pricing, terms, refund policy) before going live. |
 | **PayPal** | Customers who prefer paying with their PayPal account | **USD** (PayPal does not support SAR as a transaction currency) | PayPal's webhook signature verification API | Currency conversion fees may apply. |
 
 ### 10.3 Pricing Rules
@@ -469,15 +470,15 @@ Implement a single `PaymentProvider` interface with four operations: **create pa
 
 ### 10.5 Special Cases
 
-- **Free products:** a signed-in customer clicks "Get it"; this creates a zero-total paid order and entitlement without any gateway.
+- **Zero-total orders:** free products ("Get it") and orders reduced to zero by a 100% coupon skip the gateway and are fulfilled immediately on the server (Section 17.5 §6).
 - **Refunds:** initiated from the admin via the provider API, or received through a provider refund webhook. The order becomes `refunded` and its entitlements are revoked, so the product disappears from My Purchases.
-- **Stale pending orders:** a scheduled job marks pending orders older than a configured age as `expired`.
+- **Stale pending orders:** the maintenance task marks pending orders older than a configured age as `expired` and releases their coupon reservations (Section 17.5 §10).
 - **Receipt email failures** never affect fulfilment. The owner can resend receipts.
 
 ### 10.6 Files
 
 - Version 1 delivers **files only**.
-- Files live in a private bucket. The owner uploads directly from the browser using pre-signed PUT URLs; the server then records the file metadata.
+- Files live in a private bucket. The owner uploads directly from the browser using pre-signed PUT URLs; the server then verifies the object in storage and records its real metadata (Section 17.5 §8).
 - Files are always served as attachments, never rendered inline.
 
 ---
@@ -537,7 +538,7 @@ Implement a single `PaymentProvider` interface with four operations: **create pa
 - **Storage:** Cloudflare R2 private bucket for product files, plus a separate public bucket or CDN for product images.
 - **Email:** Resend with a verified sending domain (SPF, DKIM, DMARC).
 - **Migrations:** applied with Prisma's deploy command, never the development command.
-- **Scheduled job:** daily, to expire stale pending orders and clean up expired verification tokens.
+- **Scheduled maintenance:** a daily CLI task run inside the app container, as defined in Section 17.5 §10.
 
 ---
 
@@ -604,7 +605,7 @@ Complete the phases in order. Each phase lists its tasks, required tests, exit c
 - Configure Tailwind CSS 4.3.
 - Initialize shadcn/ui with Base UI and RTL enabled.
 - Add Docker Compose with PostgreSQL 18, Mailpit, and MinIO.
-- Install Prisma 7.10 pinned to major 7, with `prisma.config.ts`, the PostgreSQL driver adapter, and the generator output in `generated/prisma`.
+- Install `prisma`, `@prisma/client`, and `@prisma/adapter-pg` pinned to `~7.10.0` after verifying the versions with `npm view` (Section 17.5 §1), with `prisma.config.ts`, the PostgreSQL driver adapter, and the generator output in `generated/prisma`.
 - Add Zod-validated environment configuration and `.env.example`.
 - Set up Vitest and Playwright, plus the pre-commit hook.
 - Write `README.md` with setup and run instructions.
@@ -634,6 +635,7 @@ Complete the phases in order. Each phase lists its tasks, required tests, exit c
 **Tasks**
 - Full Prisma schema and initial migration (uuidv7 defaults, constraints, indexes).
 - Better Auth: Prisma adapter; email and password with required verification; magic link with sign-up disabled; `username` plugin restricted to the owner; protected `role` field; rate limits; compromised-password check; Next.js cookies plugin.
+- Better Auth `hooks.before` enforcement and the owner recovery CLI script (Section 17.5 §7).
 - Turnstile on sign-up.
 - Bilingual React Email templates: verification, magic link, password reset.
 - Customer auth pages and the owner sign-in page.
@@ -666,7 +668,7 @@ Complete the phases in order. Each phase lists its tasks, required tests, exit c
 - Admin shell and navigation.
 - Product CRUD with bilingual tabs, USD price, and optional fixed SAR price.
 - Category management.
-- Pre-signed uploads to MinIO, file versioning, publish/archive.
+- Pre-signed uploads to a `pending/` prefix in MinIO with server-side `HeadObject` verification, file versioning with `supersededAt`, publish/archive (Section 17.5 §8).
 - Cache invalidation with `updateTag`, audit logging, sanitized rich text.
 - Exchange rate setting.
 
@@ -680,11 +682,11 @@ Complete the phases in order. Each phase lists its tasks, required tests, exit c
 
 **Tasks**
 - Signed cart cookie.
-- Checkout with the sign-in gate, coupons, and `lib/money` (USD → SAR conversion and rounding).
+- Checkout with the sign-in gate, coupons with reservations (Section 17.5 §9), and `lib/money` (USD → SAR conversion and rounding).
 - Order creation and order-creation rate limiting.
 - `PaymentProvider` interface with Moyasar, Paddle, and PayPal adapters (sandbox), plus the test-only fake adapter.
 - Webhook routes with signature verification, idempotency, and amount/currency matching.
-- Result page with polling; scheduled job that expires stale pending orders.
+- Result page with polling; the maintenance CLI task that expires stale pending orders and releases their coupon reservations (Section 17.5 §10).
 
 **Tests:** unit tests for money, coupons, and the cart; integration tests for each provider's webhooks (valid, duplicate, amount mismatch, currency mismatch, bad signature); E2E checkout with the fake adapter; documented sandbox runs for all three gateways through the tunnel.
 
@@ -695,11 +697,11 @@ Complete the phases in order. Each phase lists its tasks, required tests, exit c
 ### Phase 7 — Delivery
 
 **Tasks**
-- Entitlement creation inside the fulfilment transaction.
+- Entitlement upsert inside the fulfilment transaction (Section 17.5 §4).
 - My Purchases page, download route with rate limiting, logging, and pre-signed URLs; "Updated" badge.
 - Receipt email.
-- Free products.
-- Refunds that revoke entitlements.
+- Zero-total orders: free products and 100% coupons (Section 17.5 §6).
+- Refunds that revoke entitlements, followed by successful re-purchase.
 
 **Tests:** integration tests for ownership, rate limiting, and revocation; E2E: purchase → download → exceed the per-minute limit → refund removes access.
 
@@ -709,7 +711,7 @@ Complete the phases in order. Each phase lists its tasks, required tests, exit c
 
 ### Phase 8 — Remaining Dashboard
 
-**Tasks:** overview metrics; orders (resend receipt, refund, grant/revoke entitlement); customers (ban); coupons; all settings; audit log viewer.
+**Tasks:** overview metrics; orders (resend receipt, refund, grant/revoke entitlement); customers (ban); coupons; all settings; audit log viewer; customer account deletion that preserves financial records (Section 17.5 §5).
 
 **Tests:** integration and E2E tests for every owner action, including authorization failures for non-owners.
 
@@ -718,7 +720,7 @@ Complete the phases in order. Each phase lists its tasks, required tests, exit c
 ### Phase 9 — Quality and Security Hardening
 
 **Tasks**
-- Security headers and nonce-based CSP.
+- Security headers and the two-policy CSP (Section 17.5 §2), with its automated tests.
 - Review of all rate limits.
 - Full E2E matrix and accessibility audit.
 - Performance audit (Lighthouse, bundle analyzer).
@@ -737,7 +739,7 @@ Complete the phases in order. Each phase lists its tasks, required tests, exit c
 - Multi-stage `Dockerfile` running as a non-root user.
 - Production environment template.
 - Health check endpoint.
-- `docs/DEPLOYMENT.md`: VPS setup, Coolify/Dokploy, requirements for the independent PostgreSQL 18 database, R2, Resend domain verification, Prisma deploy migrations, backups, scheduled jobs.
+- `docs/DEPLOYMENT.md`: VPS setup, Coolify/Dokploy, requirements for the independent PostgreSQL 18 database, R2, Resend domain verification, Prisma deploy migrations, backups, and the maintenance task schedule (Section 17.5 §10).
 - Go-live checklist: live gateway keys, Apple Pay domain registration with Moyasar, Paddle website review, DNS and email records.
 
 **Tag:** `v1.0.0-rc.1`.
@@ -765,6 +767,120 @@ A feature is done only when **all** of the following are true:
 - **Live payment credentials:** provided later. Use sandbox keys now.
 - **Legal page content:** use clearly marked placeholders; the owner will supply the final text.
 - **Tax:** supported but disabled by default.
+
+---
+
+## 17.5 Critical Architectural Clarifications (Mandatory)
+
+These rules **take precedence over every earlier section**. Where an earlier section is silent or could be read in more than one way, follow these rules exactly.
+
+### §1. Package Names and Versions
+
+- Use **`@base-ui/react`**, the stable package published since Base UI v1. Never use the deprecated pre-1.0 package `@base-ui-components/react`.
+- Pin `prisma`, `@prisma/client`, and `@prisma/adapter-pg` to **`~7.10.0`** (any 7.10.x patch). Never allow 8.x, which is currently a release candidate published under the default tag.
+- Use Zod 4 APIs with **`zod@^4.6.0`**.
+- **Before writing any version range into `package.json`, confirm that the version exists** with `npm view <package> versions`. Never write a version you have not verified. The lockfile pins exact versions.
+
+### §2. CSP Strategy: Nonces vs. Static Prerendering
+
+**The constraint**
+
+- Next.js applies nonces during server-side rendering from the request's CSP header, so **nonces require dynamic rendering**. Reading request headers to obtain a nonce makes a route dynamic and breaks `ensureStatic` on catalog routes.
+- Nonces are also incompatible with prerendered static shells, which is the model Cache Components is built on.
+- Hash-based CSP through Next.js's experimental SRI support is currently documented as webpack-only. Do not adopt it on Turbopack unless the current official documentation confirms support. Record the decision in `docs/DECISIONS.md`.
+
+**Two policies**
+
+1. **Nonce-protected routes** — `/[locale]/admin/*`, `/[locale]/account/*`, `/[locale]/checkout/*`, `/[locale]/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/verify-email`:
+   - A per-request nonce generated in `proxy.ts`.
+   - `script-src 'self' 'nonce-…' 'strict-dynamic'`.
+   - Only the third-party origins each route actually needs: payment gateway origins on checkout routes, Turnstile on sign-up.
+   - These routes must render fully dynamically, with no prerendered shell.
+
+2. **All other routes** (home, products, categories, cart, legal pages):
+   - A static policy set through `next.config` headers, without nonces.
+   - It allows Next.js's inline framework scripts (`script-src 'self' 'unsafe-inline'`) but **no third-party script origins**.
+   - Plus `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`, and `upgrade-insecure-requests`.
+   - Never load third-party scripts on these routes.
+
+**Consequences**
+
+- On routes without nonces, the rich text sanitizer is the primary XSS defense. It must strip every script, event-handler attribute, and `javascript:` URL.
+- Add automated tests that prove: (a) every script on nonce-protected routes carries the nonce under Cache Components, and (b) catalog routes still pass `ensureStatic`.
+
+### §3. Paddle Tax and Webhook Matching
+
+- Paddle is the Merchant of Record and assesses tax itself. **Never apply the store's internal tax to Paddle orders.**
+- Set the **tax mode explicitly** on every Paddle transaction item the store creates, and record the mode on the order. Paddle's default for Saudi Arabia is tax-inclusive.
+- **Webhook matching:** compare the **line-item unit prices the store sent** with the line-item prices in Paddle's transaction (both in USD), independent of tax.
+  - Do **not** compare `totalUsdCents` with Paddle's pre-tax subtotal: in tax-inclusive mode the subtotal is lower than the store price, and genuinely paid orders would be rejected.
+- Store on the order, separately from the store's own `totalUsdCents`: `providerTaxMode`, `providerTaxMinor` (tax collected by Paddle), and `chargedAmountMinor` (the amount actually charged).
+
+### §4. Entitlement Re-Purchase After Refund
+
+- Refunds set `revokedAt`. Entitlement rows are never deleted because of a refund.
+- Fulfilment must **upsert** on `(userId, productId)`, setting `revokedAt` to null and updating `orderItemId`. Never use a plain create.
+- Checkout still blocks buying a product the customer currently owns (an active, non-revoked entitlement).
+
+### §5. Account Deletion vs. Financial Records
+
+- `Order.userId` is **nullable** with `onDelete: SetNull`, and every order stores **`customerEmailSnapshot`** when it is created.
+- When a customer deletes their account, delete in **one transaction**: `User`, `Session`, `Account`, `Entitlement`, and their `DownloadLog` rows (cascading from `Entitlement`). Preserve `Order` and `OrderItem` rows for accounting integrity.
+- State the retention of order records, including the email snapshot, in the privacy policy placeholder.
+- The owner account can never be deleted through the customer flow.
+
+### §6. Zero-Total Orders (Free Products and 100% Coupons)
+
+- If an order's final `totalUsdCents === 0`, skip payment gateway creation and fulfil the order immediately on the server in a **single transaction**: mark the order paid, upsert entitlements, and record the coupon redemption.
+- Apply the same order-creation rate limits and the same ownership check, so free orders cannot be spammed or duplicated.
+
+### §7. Better Auth Hook Enforcement
+
+Implement these rules in a Better Auth `hooks.before` middleware.
+
+**Match against the actual endpoint paths of the installed Better Auth version.** Verify them in the 1.7 documentation or source code before writing the hook. For example, password reset is exposed as `requestPasswordReset` in recent versions, and older `forget-password` names are deprecated. A hook that matches a path which does not exist silently enforces nothing, so **every rule below must be covered by an integration test**.
+
+- **Owner and customer sign-in separation:**
+  - Block email/password sign-in and magic-link sign-in for any user whose `role === "owner"`.
+  - Block username sign-in for any user whose `role !== "owner"`.
+  - In both cases, return exactly the same generic error as invalid credentials, so accounts cannot be enumerated.
+- **Owner password recovery is allowed.** The owner's email exists specifically for recovery.
+  - Password reset requests always return the same generic response, whether or not the account exists.
+  - After resetting, the owner signs in at `/[locale]/admin/sign-in`.
+- **Offline recovery:** provide a server-side CLI script (for example, `pnpm owner:reset-password`) that sets a new owner password through Better Auth's APIs and revokes all owner sessions.
+- **Protected fields:** customers can never set or change `username` or `role` through any endpoint: sign-up, user update, or plugin endpoints.
+
+### §8. File Versioning and Storage Verification
+
+- Never hard-delete a `ProductFile` referenced by `DownloadLog`. Mark superseded versions with `supersededAt`. Buyers always receive the latest non-superseded version.
+- Uploads go to a `pending/` prefix. When the owner confirms an upload, the server:
+  1. Calls S3 `HeadObject` to verify the object exists.
+  2. Reads the real size and ETag/checksum from storage; it never trusts client-submitted metadata.
+  3. Enforces size and content-type limits based on those values.
+  4. Moves the object to its final key and records the metadata.
+- Unconfirmed objects under `pending/` are deleted after 24 hours by a bucket lifecycle rule or by the maintenance task.
+
+### §9. Coupons: Concurrency and Per-Customer Limits
+
+- **Reserve at order creation.** In one transaction:
+  - Atomically increment `reservedCount` with a conditional update that succeeds only while `usedCount + reservedCount < usageLimit` (when a limit is set).
+  - Create a `CouponRedemption` row with status `reserved` and an expiry equal to the pending order's lifetime.
+  - The partial unique index on `CouponRedemption` blocks a second active redemption by the same customer unless `allowMultiplePerCustomer` is true.
+- **Redeem at fulfilment:** move the reservation to `redeemed` (`usedCount + 1`, `reservedCount − 1`) inside the fulfilment transaction.
+- **Release on failure or expiry:** set the redemption to `released` and decrement `reservedCount`.
+- **A paid order is never rejected because of coupon limits.** If the reservation is missing or expired when payment arrives, fulfil the order anyway, record the overshoot, and flag it for the owner in the dashboard.
+
+### §10. Scheduled Maintenance
+
+- Implement maintenance as an **idempotent CLI script** (for example, `pnpm maintenance:run`) that:
+  - expires stale pending orders and releases their coupon reservations,
+  - deletes expired verification tokens,
+  - deletes unconfirmed uploads under `pending/`.
+- Run it daily as a **scheduled task inside the app container** through Coolify or Dokploy. No public endpoint is needed.
+- Only if an external scheduler is unavoidable, expose `POST /api/internal/cron` authenticated with `Authorization: Bearer <CRON_SECRET>`:
+  - the secret is at least 32 random bytes and compared in constant time,
+  - POST only, rate-limited, idempotent, and excluded from the sitemap.
+- Document the chosen approach in `docs/DEPLOYMENT.md`.
 
 ---
 
