@@ -4,6 +4,11 @@ allowBuilds:
   "@prisma/engines": true
   # Preinstall only checks the Node.js version.
   prisma: true
+  # Pulled in by next-intl's optional message extractor (unused). The install script only
+  # builds from source when explicitly requested; prebuilt binaries come as optional deps.
+  "@parcel/watcher": false
+  # Same extractor; postinstall only verifies the prebuilt native binding.
+  "@swc/core": false
   # Hooks are installed explicitly by the root `prepare` script instead.
   simple-git-hooks: false
   # Only verifies that the prebuilt native binding (installed via optionalDependencies) exists.
