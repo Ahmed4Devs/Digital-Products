@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import localRules from "./eslint-rules/no-physical-direction-classes.mjs";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -17,6 +18,7 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "playwright-report/**",
     "test-results/**",
+    "public/**",
   ]),
   {
     rules: {
@@ -25,6 +27,14 @@ const eslintConfig = defineConfig([
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", ignoreRestSiblings: true },
       ],
+    },
+  },
+  {
+    // RTL/LTR guard (spec §7.2): logical Tailwind utilities only.
+    files: ["**/*.{ts,tsx}"],
+    plugins: { local: localRules },
+    rules: {
+      "local/no-physical-direction-classes": "error",
     },
   },
 ]);
