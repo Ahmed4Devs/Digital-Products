@@ -66,6 +66,7 @@ All ports listen on `127.0.0.1` only and use project-specific numbers so they do
 | `pnpm test:e2e`                                        | Playwright against a production build on port 3100 (`E2E_DEV=1` uses `next dev`) |
 | `pnpm check`                                           | Format check, lint, typecheck and all Vitest tests                               |
 | `pnpm db:migrate` / `pnpm db:deploy`                   | `prisma migrate dev` (development) / `prisma migrate deploy` (production)        |
+| `pnpm twemoji:sync`                                    | Re-vendor the pinned Twemoji SVG set (checksum-verified)                         |
 | `pnpm db:generate` / `pnpm db:studio`                  | Regenerate the Prisma client / open Prisma Studio                                |
 | `pnpm services:up` / `services:down` / `services:logs` | Manage the Docker services using `.env.local`                                    |
 
@@ -78,12 +79,30 @@ All ports listen on `127.0.0.1` only and use project-specific numbers so they do
 ## Project layout
 
 ```text
-app/            routes (App Router); api/health is the readiness probe
-components/ui/  shadcn/ui components (installed by the CLI)
-lib/env/        Zod-validated environment (validated at server start by instrumentation.ts)
-lib/db/         Prisma client (PostgreSQL driver adapter with a pool) and health check
-prisma/         schema and migrations; prisma.config.ts holds connection settings
-docker/         init scripts and images for the local services
-tests/          unit/, integration/, e2e/, support/
-docs/           plan, decisions, progress (security and deployment docs come later)
+app/[locale]/        root layout (lang, dir, font, providers) and localized routes
+  (store)/           storefront shell (header, footer) and pages
+app/api/health/      readiness probe
+proxy.ts             locale negotiation (optimistic only, never a security boundary)
+i18n/                routing, navigation helpers, shared formats, request config
+messages/{ar,en}/    translations split by domain (common, store, auth, account, admin, emails)
+components/layout/   root document, header, footer, language and theme switchers
+components/shared/   EmojiText (server-side Twemoji), LtrText (bidi isolation)
+components/ui/       shadcn/ui components (installed by the CLI)
+lib/env/             Zod-validated environment (validated at server start by instrumentation.ts)
+lib/db/              Prisma client (PostgreSQL driver adapter with a pool) and health check
+lib/emoji/           Twemoji parsing (server only)
+public/twemoji/      vendored Twemoji v17.0.3 SVGs (CC-BY 4.0) — refresh with pnpm twemoji:sync
+eslint-rules/        local rule that forbids physical left/right Tailwind utilities
+prisma/              schema and migrations; prisma.config.ts holds connection settings
+docker/              init scripts and images for the local services
+tests/               unit/, integration/, e2e/, support/
+docs/                plan, decisions, progress (security and deployment docs come later)
 ```
+
+## Conventions
+
+- **Text:** every user-facing string lives in `messages/`; the Arabic file defines the keys and types, and tests require identical keys in English.
+- **Numbers and dates:** always format through the named formats in `i18n/formats.ts` (`format.number(x, "usd")`, `{count, number, integer}`) so Arabic pages keep Latin digits and the Gregorian calendar.
+- **Direction:** use logical Tailwind utilities (`ms-*`, `pe-*`, `inset-s-*`, `text-start`, `border-e`…); ESLint rejects physical ones unless prefixed with `rtl:` / `ltr:`. Wrap emails, order numbers and usernames inside sentences in `<LtrText>`. Flip directional icons with `rtl:-scale-x-100`.
+- **Emoji in content:** render with `<EmojiText>`; keep native emoji in `<title>`, meta tags, inputs and emails.
+- **Links:** import `Link`, `redirect`, `usePathname` and `useRouter` from `@/i18n/navigation`.

@@ -131,3 +131,82 @@ Minor gaps in the specification are resolved with the most conservative option a
 | `vitest`, `@vitest/coverage-v8` (dev)                                           | Unit/integration tests and coverage (spec §5.3)          |
 | `@playwright/test`, `@axe-core/playwright` (dev)                                | E2E and accessibility tests (spec §5.3)                  |
 | `simple-git-hooks` (dev)                                                        | Pre-commit hook (spec §5.4)                              |
+
+---
+
+# Phase 2 — Visual Foundation
+
+## 2026-10-18 — Package pins aligned with spec §17.5 §1
+
+**Decision.** `prisma`, `@prisma/client`, `@prisma/adapter-pg` → `~7.10.0`; `zod` → `^4.6.0`. Every range was checked with `npm view <pkg> versions` before it was written.
+
+**Reason.** The owner added Section 17.5 to the specification, which takes precedence over earlier sections.
+
+## 2026-10-18 — Locale is a root param
+
+**Decision.** `app/[locale]/layout.tsx` is the root layout (no `app/layout.tsx`). `i18n/request.ts` reads the locale with `next/root-params` instead of `setRequestLocale`.
+
+**Reason.** Next.js 16.3+ exposes dynamic segments above the root layout as root params, and next-intl 4.14 reads them directly, so every page prerenders per locale under Cache Components without passing the locale around. The build confirms `/ar` and `/en` are fully static.
+
+**Consequence.** Unmatched URLs fall back to Next.js's default 404 until Phase 9 adds translated 404 pages (likely with `global-not-found`, which the docs recommend for dynamic root segments).
+
+## 2026-10-18 — Latin digits and Gregorian calendar through named formats
+
+**Decision.** `i18n/formats.ts` defines named number/date formats that all set `numberingSystem: "latn"` (dates also `calendar: "gregory"`), passed to both `getRequestConfig` and `NextIntlClientProvider`. All formatting uses these names; messages use `{x, number, <name>}` / `{x, date, <name>}`. Unit tests reject bare `{x, number}` / `{x, date}` arguments, unknown format names and `#`.
+
+**Reason.** next-intl passes its locale straight to `Intl` and has no global default options. Node's ICU (CLDR 48) formats `ar` with Latin digits, but `ar-SA` and `ar-EG` default to Arabic-Indic digits (and `ar-SA` to Umm al-Qura), and browsers ship their own ICU data — so relying on defaults risks inconsistent output and hydration mismatches. Plural `#` always uses the locale default, hence its ban.
+
+**Alternatives.** Using the extended tag (`ar-SA-u-nu-latn-ca-gregory`) as the next-intl locale with a `/ar` prefix mapping: rejected because the tag would leak into `<html lang>`, cookies, `hreflang`, root params and stored `locale` columns.
+
+## 2026-10-18 — Store time zone
+
+**Decision.** `TIME_ZONE = "Asia/Riyadh"` for all date formatting, on the server and in the client provider.
+
+**Reason.** Server and browser must agree (next-intl warns otherwise), and the store operates in Saudi Arabia. Revisit if the owner wants per-visitor time zones.
+
+## 2026-10-18 — Messages shipped to the browser
+
+**Decision.** The root `NextIntlClientProvider` receives only the `common` namespace. Client components in other areas (auth forms, admin) will get a nested provider with their own namespace.
+
+**Reason.** Minimal client JavaScript (spec §12); admin and email strings never reach storefront visitors.
+
+## 2026-10-18 — Twemoji: parser and self-hosted assets
+
+**Decision.** `@twemoji/parser` 17.0.2 (jdecked fork, MIT) runs only on the server (`lib/emoji` imports `server-only`). The 4,009 SVGs of jdecked/twemoji **v17.0.3** are vendored in `public/twemoji` (~10 MB, ~1.8 MB compressed) together with `LICENSE-GRAPHICS.txt` and `VERSION`. `pnpm twemoji:sync` reproduces them from the tag archive and verifies its SHA-256 (`a0855654…5fca`). Images are served with `Cache-Control: public, max-age=2592000`.
+
+**Reason.** Spec §7.6 requires self-hosted images and no client-side parser. Vendoring makes builds deterministic and offline-capable. The npm package `@twemoji/svg` was rejected: it is published by an unrelated third party and contains the older v15 set. Tests prove every URL the parser can produce exists and scan the SVGs for active content.
+
+## 2026-10-18 — Theme tokens
+
+**Decision.** Keep shadcn's neutral palette and add a blue brand primary: light `oklch(0.47 0.13 250)` (6.5:1 against its white foreground), dark `oklch(0.78 0.11 245)` (9.0:1 against its foreground). `color-scheme` is set per theme; Tailwind's `dark` variant matches `.dark` on `<html>` itself and its descendants.
+
+**Reason.** WCAG 2.2 AA in both themes (spec §5.2, §7.5); axe runs on all four locale/theme combinations. The owner can retune the tokens; logos come later from settings.
+
+## 2026-10-18 — Direction lint rule
+
+**Decision.** A local ESLint rule (`eslint-rules/no-physical-direction-classes.mjs`) rejects physical Tailwind utilities in `className` and `cn`/`cva`/`clsx`/`cx`/`twMerge` arguments unless they sit behind `rtl:`/`ltr:`. Suggestions use Tailwind 4.2+'s canonical logical names (`inset-s`/`inset-e` for `left`/`right`).
+
+**Reason.** Spec §7.2 asks for a lint rule or checklist; a rule enforces it on every commit through the pre-commit hook. No new dependency.
+
+## 2026-10-18 — Language switcher accessibility
+
+**Decision.** The switcher link's accessible name is the visible language name (`English` / `العربية`, with `lang` and `hreflang`); the explanatory sentence is a `title`.
+
+**Reason.** An `aria-label` that omits the visible text fails WCAG 2.5.3 (Label in Name).
+
+## 2026-10-18 — Visual snapshot baselines
+
+**Decision.** Playwright snapshots are committed as `*-chromium-win32.png` (the development machine).
+
+**Reason.** Font rasterization differs per OS. When CI is introduced it should run Playwright in its official Docker image and commit Linux baselines alongside.
+
+## 2026-10-18 — Dependencies added in Phase 2
+
+| Package                                                    | Why                                                     |
+| ---------------------------------------------------------- | ------------------------------------------------------- |
+| `next-intl`                                                | Locale routing, messages and Intl formatting (spec §4)  |
+| `next-themes`                                              | Light/dark/system theming without flash (spec §4)       |
+| `@twemoji/parser`                                          | Server-side emoji detection for Twemoji (spec §4, §7.6) |
+| `components/ui/dropdown-menu` (shadcn CLI, no new package) | Accessible theme menu                                   |
+
+`next-intl` brings `@swc/core` and `@parcel/watcher` for its optional message extractor (unused); their install scripts are denied in `allowBuilds`.
