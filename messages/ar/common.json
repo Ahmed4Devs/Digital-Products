@@ -1,0 +1,30 @@
+{
+  "storeName": "المتجر الرقمي",
+  "metadata": {
+    "description": "منتجات رقمية جاهزة للتحميل فور الشراء."
+  },
+  "a11y": {
+    "skipToContent": "تخطَّ إلى المحتوى الرئيسي"
+  },
+  "nav": {
+    "primary": "التنقل الرئيسي",
+    "home": "الرئيسية"
+  },
+  "theme": {
+    "label": "تغيير المظهر",
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "حسب النظام"
+  },
+  "language": {
+    "switchTo": "عرض الموقع باللغة الإنجليزية",
+    "name": {
+      "ar": "العربية",
+      "en": "English"
+    }
+  },
+  "footer": {
+    "copyright": "© {date, date, year} {storeName}. جميع الحقوق محفوظة.",
+    "twemoji": "رسومات الإيموجي من <twemoji>Twemoji</twemoji>، مرخّصة بموجب <license>CC BY 4.0</license>."
+  }
+}

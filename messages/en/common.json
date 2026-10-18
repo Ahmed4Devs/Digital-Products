@@ -1,0 +1,30 @@
+{
+  "storeName": "Digital Store",
+  "metadata": {
+    "description": "Digital products, ready to download right after purchase."
+  },
+  "a11y": {
+    "skipToContent": "Skip to main content"
+  },
+  "nav": {
+    "primary": "Main navigation",
+    "home": "Home"
+  },
+  "theme": {
+    "label": "Change theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "switchTo": "View the site in Arabic",
+    "name": {
+      "ar": "العربية",
+      "en": "English"
+    }
+  },
+  "footer": {
+    "copyright": "© {date, date, year} {storeName}. All rights reserved.",
+    "twemoji": "Emoji graphics by <twemoji>Twemoji</twemoji>, licensed under <license>CC BY 4.0</license>."
+  }
+}

@@ -8,15 +8,20 @@ test("health check reports a healthy database", async ({ request }) => {
   expect(await response.json()).toEqual({ status: "ok", checks: { database: "ok" } });
 });
 
-test("home page renders right-to-left Arabic by default", async ({ page }) => {
-  const response = await page.goto("/");
+test.describe("with an Arabic-speaking browser", () => {
+  test.use({ locale: "ar-SA" });
 
-  expect(response?.status()).toBe(200);
-  await expect(page.locator("html")).toHaveAttribute("lang", "ar");
-  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  test("/ lands on the right-to-left Arabic home page", async ({ page }) => {
+    const response = await page.goto("/");
+
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(/\/ar$/);
+    await expect(page.locator("html")).toHaveAttribute("lang", "ar");
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  });
 });
 
 test("does not advertise the framework in response headers", async ({ request }) => {
-  const response = await request.get("/");
+  const response = await request.get("/ar");
   expect(response.headers()["x-powered-by"]).toBeUndefined();
 });
