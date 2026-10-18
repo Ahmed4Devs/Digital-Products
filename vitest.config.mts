@@ -13,7 +13,14 @@ export default defineConfig({
     restoreMocks: true,
     coverage: {
       provider: "v8",
-      include: ["lib/**/*.ts", "features/**/*.ts", "app/**/route.ts", "instrumentation.ts"],
+      include: [
+        "lib/**/*.ts",
+        "i18n/**/*.ts",
+        "features/**/*.ts",
+        "app/**/route.ts",
+        "components/shared/**/*.tsx",
+        "instrumentation.ts",
+      ],
       exclude: ["**/*.d.ts", "lib/utils.ts"],
       reporter: ["text", "html", "lcov"],
     },
