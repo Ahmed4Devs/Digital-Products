@@ -1,4 +1,10 @@
 # pnpm 11 blocks dependency lifecycle scripts unless they are reviewed here.
 allowBuilds:
+  # Downloads the Prisma schema engine binary used by `prisma migrate`.
+  "@prisma/engines": true
+  # Preinstall only checks the Node.js version.
+  prisma: true
+  # Hooks are installed explicitly by the root `prepare` script instead.
+  simple-git-hooks: false
   # Only verifies that the prebuilt native binding (installed via optionalDependencies) exists.
   unrs-resolver: false
