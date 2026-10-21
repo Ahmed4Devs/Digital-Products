@@ -6,6 +6,7 @@ import {
   PackageIcon,
   ReceiptTextIcon,
   SettingsIcon,
+  TicketPercentIcon,
   UsersIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -18,6 +19,7 @@ const ITEMS = [
   { href: "/admin/categories", key: "categories", icon: FolderTreeIcon },
   { href: "/admin/orders", key: "orders", icon: ReceiptTextIcon },
   { href: "/admin/customers", key: "customers", icon: UsersIcon },
+  { href: "/admin/coupons", key: "coupons", icon: TicketPercentIcon },
   { href: "/admin/settings", key: "settings", icon: SettingsIcon },
 ] as const;
 

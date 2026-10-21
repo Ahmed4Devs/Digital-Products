@@ -35,3 +35,16 @@ export function CustomerStatusBadge({
   if (!customer.emailVerified) return <Badge variant="secondary">{t("unverified")}</Badge>;
   return <Badge variant="outline">{t("active")}</Badge>;
 }
+
+const COUPON_VARIANTS = {
+  active: "default",
+  scheduled: "secondary",
+  inactive: "outline",
+  ended: "outline",
+  exhausted: "destructive",
+} as const;
+
+export function CouponStateBadge({ state }: { state: keyof typeof COUPON_VARIANTS }) {
+  const t = useTranslations("admin.coupons.states");
+  return <Badge variant={COUPON_VARIANTS[state]}>{t(state)}</Badge>;
+}

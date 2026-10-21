@@ -10,7 +10,8 @@
       "categories": "Categories",
       "settings": "Settings",
       "orders": "Orders",
-      "customers": "Customers"
+      "customers": "Customers",
+      "coupons": "Coupons"
     }
   },
   "overview": {
@@ -260,7 +261,12 @@
     "refundFailed": "The payment gateway refused the refund. Check its dashboard and try again.",
     "notPaid": "Access can be granted only for paid orders.",
     "alreadyOwned": "The customer already has this product.",
-    "productUnavailable": "Drafts cannot be granted. Publish the product first."
+    "productUnavailable": "Drafts cannot be granted. Publish the product first.",
+    "invalidCouponCode": "Use 3 to 40 letters, digits, hyphens or underscores.",
+    "couponCodeTaken": "This code is already in use.",
+    "invalidCouponPercent": "Enter a whole number from 1 to 100.",
+    "invalidDate": "Enter a valid date and time.",
+    "endsBeforeStarts": "Must be after the start."
   },
   "notices": {
     "productCreated": "Product created.",
@@ -284,7 +290,11 @@
     "accessGranted": "Access granted.",
     "accessRevoked": "Access revoked.",
     "customerBanned": "Account banned and signed out everywhere.",
-    "customerUnbanned": "Ban lifted."
+    "customerUnbanned": "Ban lifted.",
+    "couponCreated": "Coupon created.",
+    "couponSaved": "Coupon saved.",
+    "couponActivated": "Coupon activated.",
+    "couponDeactivated": "Coupon deactivated."
   },
   "pagination": {
     "label": "Pages",
@@ -448,5 +458,91 @@
     "placed": "Placed",
     "charged": "Charged",
     "status": "Status"
+  },
+  "coupons": {
+    "title": "Coupons",
+    "new": "New coupon",
+    "filters": "Filter coupons",
+    "search": "Code",
+    "statusFilter": "Status",
+    "statuses": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "apply": "Apply",
+    "results": "Results: {count, number, integer}",
+    "empty": "No coupons yet.",
+    "columns": {
+      "code": "Code",
+      "discount": "Discount",
+      "usage": "Used",
+      "ends": "Ends",
+      "status": "Status"
+    },
+    "usageOf": "{used, number, integer} of {limit, number, integer}",
+    "usageUnlimited": "{used, number, integer} (no limit)",
+    "noEnd": "No end date",
+    "states": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "scheduled": "Scheduled",
+      "ended": "Ended",
+      "exhausted": "Limit reached"
+    }
+  },
+  "couponForm": {
+    "createTitle": "New coupon",
+    "editTitle": "Edit coupon",
+    "back": "All coupons",
+    "code": "Code",
+    "codeHint": "Letters, digits, hyphens and underscores; customers can type it in any case. It cannot be changed later.",
+    "type": "Discount type",
+    "percent": "Percentage",
+    "fixed": "Fixed amount (USD)",
+    "percentValue": "Percentage",
+    "percentHint": "A whole number from 1 to 100.",
+    "fixedValue": "Amount (USD)",
+    "fixedHint": "Converted at the store's exchange rate when the customer pays in SAR.",
+    "minSubtotal": "Minimum subtotal (USD)",
+    "optional": "Optional.",
+    "usageLimit": "Total uses",
+    "usageLimitHint": "Optional. Leave empty for no limit.",
+    "startsAt": "Starts",
+    "endsAt": "Ends",
+    "timeZoneHint": "Optional. Riyadh time.",
+    "allowMultiple": "A customer may use it more than once",
+    "active": "Active",
+    "create": "Create coupon",
+    "save": "Save changes",
+    "createdNotice": "Coupon created.",
+    "usage": "Usage",
+    "discount": "Discount",
+    "used": "Used",
+    "usedOf": "{used, number, integer} of {limit, number, integer}",
+    "usedUnlimited": "{used, number, integer} (no limit)",
+    "reserved": "Held by unpaid orders",
+    "discountGiven": "Discount given on paid orders",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "deactivateTitle": "Deactivate this coupon?",
+    "deactivateDescription": "New checkouts can no longer use it. Orders already waiting for payment keep their discount.",
+    "confirmDeactivate": "Deactivate",
+    "cancel": "Cancel"
+  },
+  "couponRedemptions": {
+    "title": "Uses",
+    "empty": "Nobody has used this coupon yet.",
+    "order": "Order",
+    "orderNumber": "Order {number}",
+    "customer": "Customer",
+    "discount": "Discount",
+    "use": "Use",
+    "orderStatus": "Order status",
+    "statuses": {
+      "reserved": "Held",
+      "redeemed": "Used",
+      "released": "Released"
+    }
   }
 }

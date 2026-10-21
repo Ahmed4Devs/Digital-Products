@@ -10,7 +10,8 @@
       "categories": "الأقسام",
       "settings": "الإعدادات",
       "orders": "الطلبات",
-      "customers": "العملاء"
+      "customers": "العملاء",
+      "coupons": "القسائم"
     }
   },
   "overview": {
@@ -260,7 +261,12 @@
     "refundFailed": "رفضت بوابة الدفع الاسترداد. راجع لوحة تحكمها ثم حاول مجددًا.",
     "notPaid": "يُمنح الوصول للطلبات المدفوعة فقط.",
     "alreadyOwned": "يملك العميل هذا المنتج بالفعل.",
-    "productUnavailable": "لا يمكن منح المسودات. انشر المنتج أولًا."
+    "productUnavailable": "لا يمكن منح المسودات. انشر المنتج أولًا.",
+    "invalidCouponCode": "استخدم من 3 إلى 40 حرفًا إنجليزيًا أو رقمًا أو شرطة أو شرطة سفلية.",
+    "couponCodeTaken": "هذا الرمز مستخدم بالفعل.",
+    "invalidCouponPercent": "أدخل عددًا صحيحًا من 1 إلى 100.",
+    "invalidDate": "أدخل تاريخًا ووقتًا صحيحين.",
+    "endsBeforeStarts": "يجب أن يكون بعد البداية."
   },
   "notices": {
     "productCreated": "أُنشئ المنتج.",
@@ -284,7 +290,11 @@
     "accessGranted": "مُنح الوصول.",
     "accessRevoked": "أُلغي الوصول.",
     "customerBanned": "حُظر الحساب وسُجّل خروجه من كل الأجهزة.",
-    "customerUnbanned": "رُفع الحظر."
+    "customerUnbanned": "رُفع الحظر.",
+    "couponCreated": "أُنشئت القسيمة.",
+    "couponSaved": "حُفظت القسيمة.",
+    "couponActivated": "فُعّلت القسيمة.",
+    "couponDeactivated": "أُوقفت القسيمة."
   },
   "pagination": {
     "label": "الصفحات",
@@ -448,5 +458,91 @@
     "placed": "التاريخ",
     "charged": "المبلغ المدفوع",
     "status": "الحالة"
+  },
+  "coupons": {
+    "title": "القسائم",
+    "new": "قسيمة جديدة",
+    "filters": "تصفية القسائم",
+    "search": "الرمز",
+    "statusFilter": "الحالة",
+    "statuses": {
+      "all": "الكل",
+      "active": "مفعّلة",
+      "inactive": "موقوفة"
+    },
+    "apply": "تطبيق",
+    "results": "النتائج: {count, number, integer}",
+    "empty": "لا توجد قسائم بعد.",
+    "columns": {
+      "code": "الرمز",
+      "discount": "الخصم",
+      "usage": "مرات الاستخدام",
+      "ends": "تنتهي",
+      "status": "الحالة"
+    },
+    "usageOf": "{used, number, integer} من {limit, number, integer}",
+    "usageUnlimited": "{used, number, integer} (بلا حد)",
+    "noEnd": "بلا تاريخ انتهاء",
+    "states": {
+      "active": "مفعّلة",
+      "inactive": "موقوفة",
+      "scheduled": "مجدولة",
+      "ended": "منتهية",
+      "exhausted": "بلغت الحد"
+    }
+  },
+  "couponForm": {
+    "createTitle": "قسيمة جديدة",
+    "editTitle": "تعديل القسيمة",
+    "back": "كل القسائم",
+    "code": "الرمز",
+    "codeHint": "أحرف إنجليزية وأرقام وشرطات وشرطات سفلية؛ يمكن للعميل كتابته بأي حالة أحرف. لا يمكن تغييره لاحقًا.",
+    "type": "نوع الخصم",
+    "percent": "نسبة مئوية",
+    "fixed": "مبلغ ثابت (دولار)",
+    "percentValue": "النسبة",
+    "percentHint": "عدد صحيح من 1 إلى 100.",
+    "fixedValue": "المبلغ (دولار)",
+    "fixedHint": "يُحوَّل بسعر صرف المتجر عندما يدفع العميل بالريال.",
+    "minSubtotal": "الحد الأدنى للمجموع الفرعي (دولار)",
+    "optional": "اختياري.",
+    "usageLimit": "إجمالي مرات الاستخدام",
+    "usageLimitHint": "اختياري. اتركه فارغًا لعدم التقييد.",
+    "startsAt": "تبدأ",
+    "endsAt": "تنتهي",
+    "timeZoneHint": "اختياري. بتوقيت الرياض.",
+    "allowMultiple": "يمكن للعميل استخدامها أكثر من مرة",
+    "active": "مفعّلة",
+    "create": "إنشاء القسيمة",
+    "save": "حفظ التغييرات",
+    "createdNotice": "أُنشئت القسيمة.",
+    "usage": "الاستخدام",
+    "discount": "الخصم",
+    "used": "مرات الاستخدام",
+    "usedOf": "{used, number, integer} من {limit, number, integer}",
+    "usedUnlimited": "{used, number, integer} (بلا حد)",
+    "reserved": "محجوزة لطلبات غير مدفوعة",
+    "discountGiven": "الخصم الممنوح على الطلبات المدفوعة",
+    "deactivate": "إيقاف",
+    "activate": "تفعيل",
+    "deactivateTitle": "إيقاف هذه القسيمة؟",
+    "deactivateDescription": "لن تُقبل في عمليات الدفع الجديدة. تحتفظ الطلبات التي تنتظر الدفع بخصمها.",
+    "confirmDeactivate": "إيقاف",
+    "cancel": "إلغاء"
+  },
+  "couponRedemptions": {
+    "title": "الاستخدامات",
+    "empty": "لم يستخدم أحد هذه القسيمة بعد.",
+    "order": "الطلب",
+    "orderNumber": "الطلب {number}",
+    "customer": "العميل",
+    "discount": "الخصم",
+    "use": "الاستخدام",
+    "orderStatus": "حالة الطلب",
+    "statuses": {
+      "reserved": "محجوز",
+      "redeemed": "مستخدم",
+      "released": "مُحرَّر"
+    }
   }
 }
