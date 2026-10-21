@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 // What the owner may upload and where it is stored (spec §5.1, §10.6, §17.5 §8). Pure
 // functions, so the rules are unit-tested without a storage server.
 
@@ -209,7 +207,7 @@ const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const PENDING_KEY = new RegExp(`^pending/${UUID}$`);
 
 export function newPendingKey(): string {
-  return `${PENDING_PREFIX}${randomUUID()}`;
+  return `${PENDING_PREFIX}${crypto.randomUUID()}`;
 }
 
 export function isPendingKey(key: string): boolean {
@@ -218,17 +216,17 @@ export function isPendingKey(key: string): boolean {
 
 /** Final key of a product file in the private bucket. */
 export function productFileKey(productId: string): string {
-  return `products/${productId}/files/${randomUUID()}`;
+  return `products/${productId}/files/${crypto.randomUUID()}`;
 }
 
 /** Final key of a product image in the public bucket. */
 export function productImageKey(productId: string, extension: string): string {
-  return `products/${productId}/images/${randomUUID()}.${extension}`;
+  return `products/${productId}/images/${crypto.randomUUID()}.${extension}`;
 }
 
 /** Final key of a store logo in the public bucket. */
 export function logoKey(extension: string): string {
-  return `branding/${randomUUID()}.${extension}`;
+  return `branding/${crypto.randomUUID()}.${extension}`;
 }
 
 // ── Display file names ──────────────────────────────────────────────────────────────
