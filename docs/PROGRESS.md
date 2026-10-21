@@ -418,3 +418,59 @@ pnpm dev     # sign in at /ar/admin/sign-in, then the overview, orders, customer
 ### Next — Phase 9 (Quality and Security Hardening)
 
 Security headers and the two-policy CSP (nonces for the dynamic routes, a static policy for prerendered pages) with tests; rate-limit review; translated 404 and error pages; legal pages with placeholders; full E2E and accessibility pass; Lighthouse and bundle analysis; dependency audit; `docs/SECURITY.md`.
+
+## Phase 9 — Quality and Security Hardening ✅ (tag `phase-09-hardening`)
+
+**Completed:** 2026-10-21
+
+### Built
+
+- **Two-policy CSP** (spec §17.5 §2): per-request nonces with `'strict-dynamic'` on admin, account, checkout and auth pages, with Paddle, Turnstile and the upload endpoint allowed only where needed; a static policy with no third-party origin on catalog, cart and legal pages. **Security headers** on every response: HSTS, nosniff, X-Frame-Options, Referrer-Policy, COOP, Permissions-Policy.
+- **Proxy fixes:** request bodies stay intact when the nonce is added; the admin's 404 rewrite renders the store's 404 with the store's policy.
+- **Translated 404 and error pages** for both root layouts, a catch-all for unknown paths with a real 404 status, and a bilingual global error page.
+- **Legal pages** (`/[locale]/legal/terms|privacy|refund-policy|about|contact`): the owner's text or a marked placeholder, linked from the footer and listed in the sitemap; the privacy placeholder states order-record retention.
+- **Rate-limit review:** coupon checks limited per account (the only gap found).
+- **Performance:** fonts no longer preloaded and never swapped late; the dashboard's browser bundle no longer includes a Node crypto polyfill (−457 KB on the product and settings pages); heading order fixed on product lists.
+- **`docs/SECURITY.md`:** threat model, checklist and OWASP Top 10 mapping.
+- **Coverage floor** in Vitest.
+
+### Audits
+
+| Check                                  | Result                                                                                                                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Lighthouse (mobile, simulated slow 4G) | Performance 90–97, accessibility 100, best practices 100, SEO 100 (cart 63: `noindex` by design); LCP 2.5–3.4 s simulated (0.3 s observed locally), CLS ≤ 0.07 |
+| JavaScript on storefront pages         | 23–25 files, about 325 KB transferred; the rich-text editor stays in the dashboard's lazy chunk                                                                |
+| axe (WCAG 2.2 AA)                      | Every storefront, account, checkout, dashboard, legal and 404 page in ar/en × light/dark                                                                       |
+| `pnpm audit --prod`                    | No known vulnerabilities                                                                                                                                       |
+| `pnpm audit` (with dev dependencies)   | One advisory in `braces` through ESLint's Next.js plugin and the shadcn CLI; no patched version; development only (SECURITY.md)                                |
+| Framework versions                     | Next.js 16.4.2 and Better Auth 1.7.12 are the latest releases                                                                                                  |
+
+### Tests
+
+| Suite                                              | Count | Covers                                                                                                                                                 |
+| -------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Unit — `security/csp.test.ts`                      | 9     | Route classification and its next.config complement, both policies per route, third parties only where needed, dev and https switches, nonces, headers |
+| Unit — `proxy/proxy.test.ts` (additions)           | 4     | One fresh nonce per request in the request and response, the static policy on the admin 404, none on catalog routes, POST bodies untouched             |
+| Integration — `checkout/orders.test.ts` (addition) | 1     | Coupon checks per account                                                                                                                              |
+| E2E — `security.spec.ts`                           | 5     | Every script nonced and no violations on auth, account, checkout and dashboard pages; static policy and no violations on catalog pages; headers        |
+| E2E — `pages.spec.ts`                              | 6     | Legal pages from the footer, placeholders and retention statement; translated 404s with real statuses; axe on legal and 404 pages                      |
+
+Totals: **308 unit + 203 integration (Vitest), 124 E2E (Playwright)**. Coverage: 93.9 % lines overall.
+
+### Verification
+
+```bash
+pnpm services:up
+pnpm check
+pnpm test:e2e
+pnpm build && pnpm start   # then: curl -sI localhost:3000/en | grep -i content-security
+```
+
+### Known limitations
+
+- Paddle's and Turnstile's CSP origins follow their documentation; confirm them during the sandbox runs (docs/SANDBOX_TESTING.md).
+- Windows visual baselines are outdated; Linux baselines are current.
+
+### Next — Phase 10 (Release Preparation)
+
+Multi-stage non-root Dockerfile, production environment template, health check, `docs/DEPLOYMENT.md` (VPS, Coolify/Dokploy, PostgreSQL 18, R2, Resend, migrations, backups, the maintenance schedule) and the go-live checklist.

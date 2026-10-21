@@ -581,3 +581,41 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 ## 2026-10-21 — Shared admin helpers
 
 **Decision.** Admin tables share one server-rendered `Pagination` (previous/next links with the current page announced) and status badges for orders, customers and coupons. List filters are plain GET forms parsed with Zod (`.catch` defaults), so links are shareable and invalid values fall back instead of failing. Order, customer and coupon IDs in routes are checked against the UUID shape before any query.
+
+## 2026-10-21 — Two-policy CSP (spec §17.5 §2)
+
+**Decision.** `lib/security/csp.ts` builds both policies; `next.config.ts` and `proxy.ts` only apply them.
+
+- **Nonce routes** (`/[locale]/admin/*`, `account/*`, `checkout/*`, `sign-in`, `sign-up`, `forgot-password`, `reset-password`, `verify-email`) all live under the `(secure)` root layout, which awaits `connection()` before rendering anything, so there is no prerendered shell and every script is rendered per request. The proxy creates a 128-bit nonce, puts the policy in the request headers (Next.js reads the nonce from there and applies it to its scripts) and in the response; the layout passes it to next-themes' inline script. `script-src 'self' 'nonce-…' 'strict-dynamic'`, so scripts that nonce'd bundles insert (next/script) are trusted without host lists; Paddle (checkout), Turnstile (sign-up) and the upload endpoint (admin `connect-src`) are added only where needed.
+- **Every other route** gets the static policy from `next.config` headers: `script-src 'self' 'unsafe-inline'` with no third-party origin. The header `source` is the exact complement of the nonce routes (a unit test checks both), because two policies on one response would both be enforced.
+- Shared directives: `default-src 'self'`, images from self, `data:`, `blob:` and the public media origin, `frame-src 'none'` (Paddle's and Turnstile's frames where needed), `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`, and `upgrade-insecure-requests` when `APP_URL` is https. `'unsafe-eval'` only under `next dev`.
+- `style-src 'self' 'unsafe-inline'` on both: style attributes (positioned popovers, the editor) cannot carry a nonce, and styles cannot run script.
+- **No hashes:** Next.js's experimental SRI is documented as webpack-only, and this project builds with Turbopack.
+- Zod's JIT probes `new Function` on its first parse; it is switched off (`jitless`) in the schema modules that run in the browser, so pages raise no violation reports.
+- Other headers on every response: HSTS for two years with subdomains (no `preload`, a separate production decision), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `Cross-Origin-Opener-Policy: same-origin`, and a `Permissions-Policy` that turns off camera, microphone, geolocation, USB and topics and allows the Payment Request API only for Paddle's checkout frame.
+
+**Tests.** Unit tests for both policies per route, the classification of paths and the header source, nonce freshness and headers. In the real build: every `<script>` on nonce routes carries the response's nonce, no page (auth, account, checkout, dashboard, catalog) reports a violation, catalog pages keep the static policy, and every response carries the headers.
+
+## 2026-10-21 — Proxy request headers without the body
+
+**Finding.** `new NextRequest(request, { headers })` takes over the original request's body stream (a unit probe shows `bodyUsed` and `locked`). Done in the proxy for Server Action POSTs, the app could receive a used body; one checkout coupon check hung in the E2E suite. next-intl reads only the URL and headers, so it now gets a body-less copy, and a unit test reads a POST's body after the proxy ran.
+
+## 2026-10-21 — 404 and error pages
+
+**Decision.** A `[...rest]` catch-all in the store group calls `notFound()`, so unknown paths in either language render the translated 404 inside the store layout with a real 404 status (also the target of the proxy's admin 404 rewrite, which carries the store's static policy). `not-found.tsx` in each root layout covers `notFound()` from pages. Error boundaries show a translated message, a retry button and the digest only. `global-error.tsx` replaces a failed root layout with the message in both languages, read from the same translation files. The experimental `global-not-found` is not needed.
+
+## 2026-10-21 — Legal pages
+
+**Decision.** `/[locale]/legal/[slug]` for terms, privacy, refund-policy, about and contact is prerendered per locale and refreshed by the settings tag. It shows the owner's sanitized text, else the other language's text, else a translated placeholder clearly marked as sample text. The privacy placeholder states that order records and their email address are kept after account deletion (spec §17.5 §5). The footer links to all five and the sitemap lists them.
+
+## 2026-10-21 — Rate-limit review
+
+**Decision.** Every endpoint that signs in, sends email, creates orders, downloads or changes account security already had a limit. The review found one gap: coupon checks at checkout told the customer whether a code exists with no limit. They now count against 30 per account per 10 minutes. Webhooks are not rate-limited (providers retry, and the signature check is cheap); reads such as the order status poll and the session read stay unlimited.
+
+## 2026-10-21 — Font loading
+
+**Decision.** Lighthouse (mobile, simulated slow 4G) attributed most of the storefront's LCP to eight preloaded font files (Arabic and Latin, four weights, 200 KB). The font is no longer preloaded, so its unicode ranges fetch only what a page renders, and uses `display: optional`, which paints text within 100 ms and never swaps it later (Arabic glyphs differ most from any fallback, so `swap` without preloading shifted Arabic pages by up to 0.13). Measured performance went from 83–94 to 90–97 with CLS at most 0.07; accessibility, best practices and SEO are 100 (the cart is `noindex` by design). Screenshot tests reload once so the cached font is always used.
+
+## 2026-10-21 — Coverage floor
+
+**Decision.** Vitest fails below 90 % lines, 88 % statements, 90 % functions and 78 % branches, a little under the current figures (94 / 91 / 93 / 82), so coverage cannot quietly erode.

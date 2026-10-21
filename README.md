@@ -3,7 +3,7 @@
 A bilingual (Arabic / English) store that sells downloadable digital products, built with Next.js 16, React 19, Tailwind CSS 4, shadcn/ui (Base UI), Prisma 7 and PostgreSQL 18.
 
 - Specification: [`context/MASTER_PROMPT.md`](context/MASTER_PROMPT.md)
-- Plan: [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) · Decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) · Progress: [`docs/PROGRESS.md`](docs/PROGRESS.md)
+- Plan: [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) · Decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) · Progress: [`docs/PROGRESS.md`](docs/PROGRESS.md) · Security: [`docs/SECURITY.md`](docs/SECURITY.md)
 
 ## Prerequisites
 
@@ -52,6 +52,7 @@ curl localhost:3000/api/health   # {"status":"ok","checks":{"database":"ok"}}
 - Customers add products to the cart, check out (signed in, email verified), apply a coupon, and pay through an enabled gateway; free products are claimed with "Get it free". Paid products appear in My Purchases (`/[locale]/account/library`).
 - In the dashboard (`/ar/admin`) the owner creates products (Arabic/English tabs, rich-text description, USD price, optional fixed SAR and compare-at prices), uploads the cover, gallery and downloadable files, previews and publishes them, manages categories and sets the USD → SAR rate. Published changes appear in the store on the next request.
 - The dashboard also has the sales overview, orders (filters, details, resend receipt, refund, grant or revoke access), customers (purchases, ban, grant a product), coupons (create, edit, deactivate, usage), all store settings (bilingual name, logos, support email, tax, gateways, limits, legal page content) and the audit log of every change.
+- Legal pages live at `/[locale]/legal/terms`, `privacy`, `refund-policy`, `about` and `contact`; until the owner writes them (Settings → Legal pages) they show marked placeholder text.
 - Customers manage their account at `/[locale]/account`: change the email (confirmed from the new address), change the password (other devices are signed out) or delete the account (orders are kept for the accounts, without the personal link).
 - Owner locked out? On the server: `pnpm owner:reset-password` sets a new password and signs the owner out everywhere.
 
@@ -137,7 +138,8 @@ app/api/downloads/   the secure download gateway (ownership, limit, log, pre-sig
 app/api/health/      readiness probe
 app/sitemap.ts       /sitemap.xml (both languages, hreflang alternates)
 app/robots.ts        /robots.txt
-proxy.ts             locale negotiation and optimistic redirects / 404s (never a security boundary)
+proxy.ts             locale negotiation, optimistic redirects, genuine admin 404s and CSP nonces
+                     (logic in lib/proxy; never a security boundary)
 i18n/                routing, navigation helpers, shared formats, request config
 messages/{ar,en}/    translations split by domain (common, store, auth, account, admin, emails)
 components/admin/    dashboard navigation, product form, lazy rich-text editor and emoji picker,
@@ -166,7 +168,8 @@ lib/storage/         S3 client (MinIO / R2), upload policy (types, sizes, signat
                      file names) and signed upload tickets
 lib/audit/           AuditLog rows with before/after diffs
 lib/actions/         Server Action result shape and error mapping
-lib/security/        keyed hashing, constant-time comparison, client IP resolution
+lib/security/        keyed hashing, constant-time comparison, client IP resolution, the two CSP
+                     policies and security headers
 lib/money/           integer money math: USD→SAR (round half up), fixed SAR prices, order
                      pricing (coupons, store tax, discount allocation)
 lib/text/            slugs, grapheme lengths, bilingual fallback
@@ -181,7 +184,7 @@ eslint-rules/        local rule that forbids physical left/right Tailwind utilit
 prisma/              schema, migrations and seed; prisma.config.ts holds connection settings
 docker/              init scripts and images for the local services
 tests/               unit/, integration/, e2e/, support/
-docs/                plan, decisions, progress, sandbox testing (security and deployment docs come later)
+docs/                plan, decisions, progress, sandbox testing, security (deployment comes in Phase 10)
 ```
 
 ## Conventions
