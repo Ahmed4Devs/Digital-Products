@@ -20,6 +20,11 @@ const serverCommand = process.env.E2E_DEV
   ? `${prepareDatabase} && pnpm exec next dev --port ${PORT}`
   : `${prepareDatabase} && pnpm build && pnpm exec next start --port ${PORT}`;
 
+const browser = {
+  ...devices["Desktop Chrome"],
+  ...(chromiumExecutable ? { launchOptions: { executablePath: chromiumExecutable } } : {}),
+};
+
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
@@ -36,10 +41,16 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-        ...(chromiumExecutable ? { launchOptions: { executablePath: chromiumExecutable } } : {}),
-      },
+      testIgnore: /admin\.spec\.ts/,
+      use: browser,
+    },
+    {
+      // Owner specs change the catalog (publishing, categories), so they run after the
+      // storefront specs that assert exact listings.
+      name: "admin",
+      testMatch: /admin\.spec\.ts/,
+      dependencies: ["chromium"],
+      use: browser,
     },
   ],
   webServer: {
