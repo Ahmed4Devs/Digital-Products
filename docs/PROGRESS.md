@@ -475,7 +475,7 @@ pnpm build && pnpm start   # then: curl -sI localhost:3000/en | grep -i content-
 
 Multi-stage non-root Dockerfile, production environment template, health check, `docs/DEPLOYMENT.md` (VPS, Coolify/Dokploy, PostgreSQL 18, R2, Resend, migrations, backups, the maintenance schedule) and the go-live checklist.
 
-## Phase 10 — Release Preparation ✅ (tag `v1.0.0-rc.1`)
+## Phase 10 — Release Preparation ✅ (tag `v1.0.0`)
 
 **Completed:** 2026-10-21. Nothing was deployed (spec rule).
 
@@ -486,7 +486,7 @@ Multi-stage non-root Dockerfile, production environment template, health check, 
 - **Health check:** `/api/health` (database readiness, 200/503) used by the image and the platform.
 - **`docs/DEPLOYMENT.md`**: VPS hardening, Coolify/Dokploy setup, the independent PostgreSQL 18 database (TLS, IP allowlist, pooling, direct URL for migrations, build-time access), Cloudflare R2 (buckets, token scope, CORS for pre-signed PUT, custom domain), Resend (SPF, DKIM, DMARC), Turnstile, the first deployment, the daily maintenance task, backups and restore drills, operations, and the **go-live checklist** (live gateway keys and webhooks, Apple Pay domain registration with Moyasar, Paddle website review, DNS and email records, legal pages, test purchases and refunds).
 - Migrations prefer `DIRECT_DATABASE_URL` when set; `prisma` and `tsx` are production dependencies so the container can run migrations, the seed and maintenance.
-- Version `1.0.0-rc.1`.
+- Version `1.0.0`.
 
 ### Verification
 
@@ -508,4 +508,4 @@ The local image was built on `node:24-bookworm`: this environment's network poli
 
 ### Release
 
-`v1.0.0-rc.1` marks the first release candidate: every phase of the plan is complete, documented and tested.
+`v1.0.0` is the first release: every phase of the plan is complete, documented and tested. The owner chose a final version over the release candidate the spec named (see DECISIONS.md).

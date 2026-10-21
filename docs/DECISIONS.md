@@ -640,3 +640,7 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 ## 2026-10-21 — Production environment template
 
 **Decision.** `.env.production.example` lists every variable the server reads in production, with placeholders and notes (TLS database URL, R2 endpoint and region `auto`, Resend, Turnstile, trusted proxy range, live gateway environments, owner variables commented out and removed after seeding). A unit test checks that both templates name every variable and that the production template passes the production checks.
+
+## 2026-10-21 — First release version
+
+**Decision.** The owner chose `1.0.0` as the first release instead of `1.0.0-rc.1`, the release candidate the spec named for Phase 10. `package.json` and the tag use `1.0.0`. The go-live checklist in DEPLOYMENT.md still applies before real customers use the store; fixes found there ship as `1.0.x`.

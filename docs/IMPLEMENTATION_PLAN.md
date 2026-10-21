@@ -159,7 +159,7 @@ Overview metrics; orders (filters, details, resend receipt, refund, grant/revoke
 
 Two-policy CSP (§17.5 §2): per-request nonce + `'strict-dynamic'` on admin/account/checkout/auth routes (fully dynamic, only the third-party origins each route needs), static `next.config` policy without third-party script origins everywhere else; tests proving every script on protected routes carries the nonce and catalog routes still pass `ensureStatic`; SRI/hash-based CSP decision recorded (Turbopack support); plus HSTS, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`; rate-limit review; full E2E matrix + axe; Lighthouse in both locales/themes; bundle analyzer; translated 404/error pages; legal placeholder pages; `pnpm audit`; `docs/SECURITY.md` (threat model, checklist, OWASP Top 10 mapping); coverage targets enforced (≥ 90 % critical modules, ≥ 70 % overall).
 
-## Phase 10 — Release Preparation (no deployment) → tag `v1.0.0-rc.1`
+## Phase 10 — Release Preparation (no deployment) → tag `v1.0.0`
 
 Multi-stage non-root `Dockerfile`; production env template; health endpoint hardening; `docs/DEPLOYMENT.md` (VPS, Coolify/Dokploy, independent PostgreSQL 18 requirements, R2, Resend domain, `prisma migrate deploy`, backups, the daily `maintenance:run` schedule inside the app container); go-live checklist.
 
