@@ -9,7 +9,8 @@
       "products": "المنتجات",
       "categories": "الأقسام",
       "settings": "الإعدادات",
-      "orders": "الطلبات"
+      "orders": "الطلبات",
+      "customers": "العملاء"
     }
   },
   "overview": {
@@ -257,7 +258,9 @@
     "notRefundable": "يمكن استرداد الطلبات المدفوعة فقط.",
     "gatewayUnavailable": "بوابة الدفع لهذا الطلب غير مهيأة على الخادم.",
     "refundFailed": "رفضت بوابة الدفع الاسترداد. راجع لوحة تحكمها ثم حاول مجددًا.",
-    "notPaid": "يُمنح الوصول للطلبات المدفوعة فقط."
+    "notPaid": "يُمنح الوصول للطلبات المدفوعة فقط.",
+    "alreadyOwned": "يملك العميل هذا المنتج بالفعل.",
+    "productUnavailable": "لا يمكن منح المسودات. انشر المنتج أولًا."
   },
   "notices": {
     "productCreated": "أُنشئ المنتج.",
@@ -279,7 +282,9 @@
     "orderRefunded": "استُرد الطلب ولم يعد للعميل وصول إلى منتجاته.",
     "refundPending": "طُلب الاسترداد. يُعلَّم الطلب مستردًا عندما تؤكده البوابة.",
     "accessGranted": "مُنح الوصول.",
-    "accessRevoked": "أُلغي الوصول."
+    "accessRevoked": "أُلغي الوصول.",
+    "customerBanned": "حُظر الحساب وسُجّل خروجه من كل الأجهزة.",
+    "customerUnbanned": "رُفع الحظر."
   },
   "pagination": {
     "label": "الصفحات",
@@ -372,5 +377,76 @@
     "refundDescription": "يُسترد المبلغ كاملًا عبر بوابة الدفع ويفقد العميل الوصول إلى منتجات الطلب.",
     "confirmRefund": "استرداد",
     "cancel": "إلغاء"
+  },
+  "customers": {
+    "title": "العملاء",
+    "filters": "تصفية العملاء",
+    "search": "بحث",
+    "searchPlaceholder": "البريد الإلكتروني",
+    "statusFilter": "الحالة",
+    "statuses": {
+      "all": "الكل",
+      "active": "نشط",
+      "banned": "محظور",
+      "unverified": "غير موثّق"
+    },
+    "apply": "تطبيق",
+    "results": "النتائج: {count, number, integer}",
+    "empty": "لا يوجد عملاء مطابقون.",
+    "columns": {
+      "email": "البريد الإلكتروني",
+      "status": "الحالة",
+      "orders": "الطلبات المدفوعة",
+      "products": "المنتجات",
+      "joined": "تاريخ التسجيل"
+    }
+  },
+  "customerDetail": {
+    "metadataTitle": "العميل",
+    "back": "كل العملاء",
+    "summary": "الحساب",
+    "joined": "تاريخ التسجيل",
+    "language": "اللغة",
+    "languages": {
+      "ar": "العربية",
+      "en": "الإنجليزية"
+    },
+    "spent": "إجمالي المدفوع",
+    "banHint": "الحظر يُخرج العميل من كل الأجهزة ويمنعه من تسجيل الدخول. تبقى طلباته محفوظة.",
+    "bannedHint": "هذا الحساب محظور: لا يمكنه تسجيل الدخول أو التنزيل.",
+    "ban": "حظر الحساب",
+    "unban": "رفع الحظر",
+    "banTitle": "حظر هذا الحساب؟",
+    "banDescription": "يُسجَّل خروج العميل من كل الأجهزة ولن يتمكن من تسجيل الدخول أو تنزيل منتجاته.",
+    "confirmBan": "حظر",
+    "cancel": "إلغاء",
+    "products": "المنتجات",
+    "noProducts": "لا يملك هذا العميل منتجات بعد.",
+    "product": "المنتج",
+    "source": "المصدر",
+    "fromOrder": "الطلب {number}",
+    "grantedByOwner": "منحته أنت",
+    "access": "الوصول",
+    "accessActive": "مفعّل",
+    "accessRevoked": "ملغى",
+    "downloads": "التنزيلات",
+    "accessActions": "إجراءات الوصول",
+    "revoke": "إلغاء الوصول",
+    "revokeFor": "إلغاء الوصول إلى {title}",
+    "revokeTitle": "إلغاء الوصول؟",
+    "revokeDescription": "لن يتمكن العميل من تنزيل هذا المنتج. يمكنك منحه الوصول لاحقًا.",
+    "confirmRevoke": "إلغاء الوصول",
+    "grantProduct": "منح منتج",
+    "chooseProduct": "اختر منتجًا",
+    "archivedProduct": "{title} (مؤرشف)",
+    "grant": "منح",
+    "nothingToGrant": "يملك هذا العميل كل المنتجات.",
+    "orders": "الطلبات",
+    "noOrders": "لا توجد طلبات بعد.",
+    "order": "الطلب",
+    "orderNumber": "الطلب {number}",
+    "placed": "التاريخ",
+    "charged": "المبلغ المدفوع",
+    "status": "الحالة"
   }
 }

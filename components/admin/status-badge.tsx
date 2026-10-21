@@ -24,3 +24,14 @@ export function OrderStatusBadge({ status }: { status: keyof typeof ORDER_VARIAN
   const t = useTranslations("admin.orderStatus");
   return <Badge variant={ORDER_VARIANTS[status]}>{t(status)}</Badge>;
 }
+
+export function CustomerStatusBadge({
+  customer,
+}: {
+  customer: { banned: boolean; emailVerified: boolean };
+}) {
+  const t = useTranslations("admin.customers.statuses");
+  if (customer.banned) return <Badge variant="destructive">{t("banned")}</Badge>;
+  if (!customer.emailVerified) return <Badge variant="secondary">{t("unverified")}</Badge>;
+  return <Badge variant="outline">{t("active")}</Badge>;
+}

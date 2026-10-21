@@ -9,7 +9,8 @@
       "products": "Products",
       "categories": "Categories",
       "settings": "Settings",
-      "orders": "Orders"
+      "orders": "Orders",
+      "customers": "Customers"
     }
   },
   "overview": {
@@ -257,7 +258,9 @@
     "notRefundable": "Only paid orders can be refunded.",
     "gatewayUnavailable": "This order's payment gateway is not configured on the server.",
     "refundFailed": "The payment gateway refused the refund. Check its dashboard and try again.",
-    "notPaid": "Access can be granted only for paid orders."
+    "notPaid": "Access can be granted only for paid orders.",
+    "alreadyOwned": "The customer already has this product.",
+    "productUnavailable": "Drafts cannot be granted. Publish the product first."
   },
   "notices": {
     "productCreated": "Product created.",
@@ -279,7 +282,9 @@
     "orderRefunded": "Order refunded. The customer no longer has access.",
     "refundPending": "Refund requested. The order is marked refunded once the gateway confirms it.",
     "accessGranted": "Access granted.",
-    "accessRevoked": "Access revoked."
+    "accessRevoked": "Access revoked.",
+    "customerBanned": "Account banned and signed out everywhere.",
+    "customerUnbanned": "Ban lifted."
   },
   "pagination": {
     "label": "Pages",
@@ -372,5 +377,76 @@
     "refundDescription": "The full amount is refunded through the payment gateway and the customer loses access to its products.",
     "confirmRefund": "Refund",
     "cancel": "Cancel"
+  },
+  "customers": {
+    "title": "Customers",
+    "filters": "Filter customers",
+    "search": "Search",
+    "searchPlaceholder": "Email",
+    "statusFilter": "Status",
+    "statuses": {
+      "all": "All",
+      "active": "Active",
+      "banned": "Banned",
+      "unverified": "Unverified"
+    },
+    "apply": "Apply",
+    "results": "Results: {count, number, integer}",
+    "empty": "No customers match.",
+    "columns": {
+      "email": "Email",
+      "status": "Status",
+      "orders": "Paid orders",
+      "products": "Products",
+      "joined": "Joined"
+    }
+  },
+  "customerDetail": {
+    "metadataTitle": "Customer",
+    "back": "All customers",
+    "summary": "Account",
+    "joined": "Joined",
+    "language": "Language",
+    "languages": {
+      "ar": "Arabic",
+      "en": "English"
+    },
+    "spent": "Paid in total",
+    "banHint": "Banning signs the customer out everywhere and blocks sign-in. Their orders are kept.",
+    "bannedHint": "This account is banned: it cannot sign in or download.",
+    "ban": "Ban account",
+    "unban": "Lift ban",
+    "banTitle": "Ban this account?",
+    "banDescription": "The customer is signed out on every device and can no longer sign in or download their products.",
+    "confirmBan": "Ban",
+    "cancel": "Cancel",
+    "products": "Products",
+    "noProducts": "This customer has no products yet.",
+    "product": "Product",
+    "source": "From",
+    "fromOrder": "Order {number}",
+    "grantedByOwner": "Granted by you",
+    "access": "Access",
+    "accessActive": "Active",
+    "accessRevoked": "Revoked",
+    "downloads": "Downloads",
+    "accessActions": "Access actions",
+    "revoke": "Revoke access",
+    "revokeFor": "Revoke access to {title}",
+    "revokeTitle": "Revoke access?",
+    "revokeDescription": "The customer can no longer download this product. You can grant it again later.",
+    "confirmRevoke": "Revoke",
+    "grantProduct": "Grant a product",
+    "chooseProduct": "Choose a product",
+    "archivedProduct": "{title} (archived)",
+    "grant": "Grant",
+    "nothingToGrant": "This customer already has every product.",
+    "orders": "Orders",
+    "noOrders": "No orders yet.",
+    "order": "Order",
+    "orderNumber": "Order {number}",
+    "placed": "Placed",
+    "charged": "Charged",
+    "status": "Status"
   }
 }

@@ -6,6 +6,7 @@ import {
   PackageIcon,
   ReceiptTextIcon,
   SettingsIcon,
+  UsersIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -16,6 +17,7 @@ const ITEMS = [
   { href: "/admin/products", key: "products", icon: PackageIcon },
   { href: "/admin/categories", key: "categories", icon: FolderTreeIcon },
   { href: "/admin/orders", key: "orders", icon: ReceiptTextIcon },
+  { href: "/admin/customers", key: "customers", icon: UsersIcon },
   { href: "/admin/settings", key: "settings", icon: SettingsIcon },
 ] as const;
 
