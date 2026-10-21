@@ -7,6 +7,7 @@ import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { Logo } from "@/components/layout/logo";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { buttonVariants } from "@/components/ui/button";
+import { getStoreBranding } from "@/features/settings/branding";
 import { Link } from "@/i18n/navigation";
 import { requireOwner } from "@/lib/auth/dal";
 
@@ -16,10 +17,7 @@ export const instant = false;
 
 export default async function AdminLayout({ children }: LayoutProps<"/[locale]">) {
   await requireOwner();
-  const [t, common] = await Promise.all([
-    getTranslations("admin.shell"),
-    getTranslations("common"),
-  ]);
+  const [t, branding] = await Promise.all([getTranslations("admin.shell"), getStoreBranding()]);
 
   return (
     <IntlNamespaces namespaces={["auth", "admin"]}>
@@ -28,7 +26,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/[locale]">
           <div className="flex h-16 items-center gap-2 px-4">
             <Logo className="size-7 text-primary" />
             <span className="flex flex-col leading-tight">
-              <span className="font-semibold">{common("storeName")}</span>
+              <span className="font-semibold">{branding.name}</span>
               <span className="text-xs text-muted-foreground">{t("title")}</span>
             </span>
           </div>

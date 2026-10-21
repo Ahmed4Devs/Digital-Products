@@ -7,6 +7,7 @@ import { EmojiText } from "@/components/shared/emoji-text";
 import { buttonVariants } from "@/components/ui/button";
 import { getCategories } from "@/features/categories/queries";
 import { getFeaturedProducts, getNewestProducts } from "@/features/products/queries";
+import { getStoreBranding } from "@/features/settings/branding";
 import { getPublicStoreSettings } from "@/features/settings/queries";
 import { Link } from "@/i18n/navigation";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -15,15 +16,16 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const ensureStatic = "navigation";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [locale, t, common] = await Promise.all([
+  const [locale, t, common, branding] = await Promise.all([
     getLocale(),
     getTranslations("store.home"),
     getTranslations("common"),
+    getStoreBranding(),
   ]);
   return pageMetadata({
     locale,
     path: "/",
-    title: { absolute: common("storeName") },
+    title: { absolute: branding.name },
     description: common("metadata.description"),
     openGraphTitle: t("title"),
   });

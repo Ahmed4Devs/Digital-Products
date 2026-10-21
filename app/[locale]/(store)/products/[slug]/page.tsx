@@ -7,6 +7,7 @@ import { ProductDetailView } from "@/components/catalog/product-detail";
 import { categoryHref, productHref } from "@/lib/seo/paths";
 import { ProductJsonLd } from "@/components/catalog/product-json-ld";
 import { getProductBySlug, getPublishedProductSlugs } from "@/features/products/queries";
+import { getStoreBranding } from "@/features/settings/branding";
 import { getPublicStoreSettings } from "@/features/settings/queries";
 import { publicImageUrl } from "@/lib/env/public";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -32,10 +33,10 @@ async function loadProduct(params: Promise<{ slug: string }>) {
 export async function generateMetadata({
   params,
 }: PageProps<"/[locale]/products/[slug]">): Promise<Metadata> {
-  const [locale, product, common] = await Promise.all([
+  const [locale, product, branding] = await Promise.all([
     getLocale(),
     loadProduct(params),
-    getTranslations("common"),
+    getStoreBranding(),
   ]);
   if (!product) return {};
 
@@ -51,7 +52,7 @@ export async function generateMetadata({
     path: productHref(product.slug),
     title: seoTitle || title,
     description,
-    siteName: common("storeName"),
+    siteName: branding.name,
     images:
       product.cover && coverUrl
         ? [{ url: coverUrl, width: product.cover.width, height: product.cover.height, alt: title }]

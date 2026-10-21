@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { getStoreBranding } from "@/features/settings/branding";
 import { appUrl } from "@/lib/env/public";
 
 /**
@@ -7,8 +8,10 @@ import { appUrl } from "@/lib/env/public";
  * pages are indexable; authentication, account and admin pages are not.
  */
 export async function rootMetadata({ indexable }: { indexable: boolean }): Promise<Metadata> {
-  const t = await getTranslations("common");
-  const storeName = t("storeName");
+  const [t, { name: storeName }] = await Promise.all([
+    getTranslations("common"),
+    getStoreBranding(),
+  ]);
 
   return {
     metadataBase: appUrl(),
