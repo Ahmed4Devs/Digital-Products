@@ -192,11 +192,16 @@ export function DeleteAccountForm() {
           <div className="flex items-start gap-2">
             <Checkbox
               id="delete-account-confirm"
+              aria-labelledby="delete-account-confirm-label"
               name="confirm"
               aria-invalid={confirmError ? true : undefined}
               aria-describedby={confirmError ? "delete-account-confirm-error" : undefined}
             />
-            <Label htmlFor="delete-account-confirm" className="leading-snug">
+            <Label
+              id="delete-account-confirm-label"
+              htmlFor="delete-account-confirm"
+              className="leading-snug"
+            >
               {t("deleteConfirm")}
             </Label>
           </div>

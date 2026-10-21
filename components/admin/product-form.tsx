@@ -260,8 +260,15 @@ export function ProductForm({ productId, defaults, categories }: ProductFormProp
           </FieldShell>
         </div>
         <div className="flex items-center gap-2">
-          <Checkbox id={featuredId} name="featured" defaultChecked={defaults.featured} />
-          <Label htmlFor={featuredId}>{t("featured")}</Label>
+          <Checkbox
+            id={featuredId}
+            name="featured"
+            defaultChecked={defaults.featured}
+            aria-labelledby={`${featuredId}-label`}
+          />
+          <Label id={`${featuredId}-label`} htmlFor={featuredId}>
+            {t("featured")}
+          </Label>
         </div>
       </section>
 

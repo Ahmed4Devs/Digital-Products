@@ -89,11 +89,14 @@ export default async function AdminOrdersPage({
           <div className="flex items-center gap-2">
             <Checkbox
               id="order-overshoot"
+              aria-labelledby="order-overshoot-label"
               name="overshoot"
               value="1"
               defaultChecked={Boolean(search.overshoot)}
             />
-            <Label htmlFor="order-overshoot">{t("overshootOnly")}</Label>
+            <Label id="order-overshoot-label" htmlFor="order-overshoot">
+              {t("overshootOnly")}
+            </Label>
           </div>
           <Button type="submit" variant="outline" size="lg">
             {t("apply")}

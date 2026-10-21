@@ -30,11 +30,14 @@ export function GatewaySettingsForm({ gateways }: { gateways: GatewayOption[] })
             <div className="flex items-center gap-2">
               <Checkbox
                 id={`gateway-${gateway.id}`}
+                aria-labelledby={`gateway-${gateway.id}-label`}
                 name={`${gateway.id}Enabled`}
                 defaultChecked={gateway.enabled}
                 disabled={!gateway.configured}
               />
-              <Label htmlFor={`gateway-${gateway.id}`}>{t(gateway.id)}</Label>
+              <Label id={`gateway-${gateway.id}-label`} htmlFor={`gateway-${gateway.id}`}>
+                {t(gateway.id)}
+              </Label>
             </div>
             {!gateway.configured ? (
               <p className="ps-6 text-xs text-muted-foreground">{t("notConfigured")}</p>

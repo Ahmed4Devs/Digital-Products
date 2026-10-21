@@ -72,8 +72,15 @@ export function StoreSettingsForm({ defaults }: { defaults: StoreSettingsDefault
         <legend className="mb-2 font-medium">{t("tax")}</legend>
         <p className="text-sm text-muted-foreground">{t("taxHint")}</p>
         <div className="flex items-center gap-2">
-          <Checkbox id={taxId} name="taxEnabled" defaultChecked={defaults.taxEnabled} />
-          <Label htmlFor={taxId}>{t("taxEnabled")}</Label>
+          <Checkbox
+            id={taxId}
+            name="taxEnabled"
+            defaultChecked={defaults.taxEnabled}
+            aria-labelledby={`${taxId}-label`}
+          />
+          <Label id={`${taxId}-label`} htmlFor={taxId}>
+            {t("taxEnabled")}
+          </Label>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField

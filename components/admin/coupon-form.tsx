@@ -126,15 +126,25 @@ export function CouponForm({
         <div className="flex items-center gap-2">
           <Checkbox
             id={`${typeId}-multiple`}
+            aria-labelledby={`${typeId}-multiple-label`}
             name="allowMultiplePerCustomer"
             defaultChecked={defaults.allowMultiplePerCustomer}
           />
-          <Label htmlFor={`${typeId}-multiple`}>{t("allowMultiple")}</Label>
+          <Label id={`${typeId}-multiple-label`} htmlFor={`${typeId}-multiple`}>
+            {t("allowMultiple")}
+          </Label>
         </div>
         {couponId ? null : (
           <div className="flex items-center gap-2">
-            <Checkbox id={`${typeId}-active`} name="active" defaultChecked={defaults.active} />
-            <Label htmlFor={`${typeId}-active`}>{t("active")}</Label>
+            <Checkbox
+              id={`${typeId}-active`}
+              name="active"
+              defaultChecked={defaults.active}
+              aria-labelledby={`${typeId}-active-label`}
+            />
+            <Label id={`${typeId}-active-label`} htmlFor={`${typeId}-active`}>
+              {t("active")}
+            </Label>
           </div>
         )}
       </div>
