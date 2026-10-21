@@ -1,23 +1,35 @@
-import { getTranslations } from "next-intl/server";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { SiteHeader } from "@/components/layout/site-header";
+import type { Metadata } from "next";
+import { hasLocale } from "next-intl";
+import { notFound } from "next/navigation";
+import { RootDocument } from "@/components/layout/root-document";
+import { rootMetadata } from "@/components/layout/root-metadata";
+import { SiteShell } from "@/components/layout/site-shell";
+import { routing } from "@/i18n/routing";
+import "../../globals.css";
 
-export default async function StoreLayout({ children }: LayoutProps<"/[locale]">) {
-  const t = await getTranslations("common.a11y");
+// Root layout of the public storefront: statically prerendered per locale.
+//
+// The app has two root layouts. This one stays static (catalog pages must pass
+// ensureStatic, spec §12); `(secure)` renders fully on demand for authentication, the
+// account area and the admin (spec §17.5 §2). `[locale]` sits above both, so it is a
+// root param that next-intl reads on the server.
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export function generateMetadata(): Promise<Metadata> {
+  return rootMetadata();
+}
+
+export default async function StoreRootLayout({ children, params }: LayoutProps<"/[locale]">) {
+  const { locale } = await params;
+  if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
 
   return (
-    <>
-      <a
-        href="#main-content"
-        className="sr-only z-50 rounded-md bg-background px-4 py-2 font-medium shadow-md focus:not-sr-only focus:fixed focus:inset-s-4 focus:top-4 focus:ring-3 focus:ring-ring/50"
-      >
-        {t("skipToContent")}
-      </a>
-      <SiteHeader />
-      <main id="main-content" tabIndex={-1} className="flex-1 outline-none">
-        {children}
-      </main>
-      <SiteFooter />
-    </>
+    <RootDocument locale={locale}>
+      <SiteShell>{children}</SiteShell>
+    </RootDocument>
   );
 }

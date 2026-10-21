@@ -1,5 +1,7 @@
 import { getTranslations } from "next-intl/server";
+import { Suspense } from "react";
 import { Link } from "@/i18n/navigation";
+import { AccountLink, AccountLinkFallback } from "./account-link";
 import { LanguageSwitcher } from "./language-switcher";
 import { Logo } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
@@ -17,8 +19,11 @@ export async function SiteHeader() {
           <Logo className="size-7 text-primary" />
           <span>{t("storeName")}</span>
         </Link>
-        {/* Cart count and user menu are added (inside Suspense) in later phases. */}
+        {/* The cart count joins the account link (inside Suspense) in Phase 6. */}
         <div className="flex items-center gap-1">
+          <Suspense fallback={<AccountLinkFallback />}>
+            <AccountLink />
+          </Suspense>
           <LanguageSwitcher />
           <ThemeToggle />
         </div>

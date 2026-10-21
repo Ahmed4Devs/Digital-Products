@@ -1,1 +1,7 @@
-{}
+{
+  "metadataTitle": "Dashboard",
+  "overview": {
+    "title": "Dashboard",
+    "welcome": "Welcome, {name}. Dashboard sections arrive in the next phases."
+  }
+}

@@ -1,1 +1,12 @@
-{}
+{
+  "nav": {
+    "account": "حسابي",
+    "signIn": "تسجيل الدخول"
+  },
+  "overview": {
+    "metadataTitle": "حسابي",
+    "title": "حسابي",
+    "signedInAs": "مسجّل الدخول بالبريد <email></email>",
+    "comingSoon": "ستظهر هنا مشترياتك وطلباتك وإعدادات حسابك."
+  }
+}
