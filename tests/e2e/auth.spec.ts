@@ -1,4 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
+import { withCachedFonts } from "../support/e2e-fonts";
 import { expect, test, type Page } from "@playwright/test";
 import { e2eDb } from "../support/e2e-db";
 import { extractLink, waitForMessage } from "../support/mailpit";
@@ -183,7 +184,7 @@ for (const { locale, dir } of [
 
       test("sign-in matches its visual snapshot", async ({ page }) => {
         await page.goto(`/${locale}/sign-in`);
-        await page.evaluate(() => document.fonts.ready);
+        await withCachedFonts(page);
         await expect(page).toHaveScreenshot(`sign-in-${locale}-${scheme}.png`, { fullPage: true });
       });
     });

@@ -1,4 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
+import { withCachedFonts } from "@/tests/support/e2e-fonts";
 import { expect, test, type Page } from "@playwright/test";
 
 const LOCALES = [
@@ -48,6 +49,7 @@ for (const { locale, dir } of LOCALES) {
         const sparkle = page.getByRole("heading", { level: 1 }).getByRole("img", { name: "✨" });
         await expect(sparkle).toHaveAttribute("src", "/twemoji/2728.svg");
 
+        await withCachedFonts(page);
         await waitForAssets(page);
         // A broken image reports naturalWidth 0.
         expect(

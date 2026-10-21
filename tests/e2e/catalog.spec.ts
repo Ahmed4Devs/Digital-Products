@@ -1,4 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
+import { withCachedFonts } from "@/tests/support/e2e-fonts";
 import { expect, test, type Page } from "@playwright/test";
 
 // Browsing the catalog seeded by tests/e2e/prepare-database.ts (scripts/lib/demo-catalog
@@ -221,6 +222,7 @@ for (const { locale, dir } of [
 
       test("product page matches its visual snapshot", async ({ page }) => {
         await page.goto(`/${locale}/products/social-media-design-kit`);
+        await withCachedFonts(page);
         await waitForAssets(page);
         await expect(page).toHaveScreenshot(`product-${locale}-${scheme}.png`, { fullPage: true });
       });
