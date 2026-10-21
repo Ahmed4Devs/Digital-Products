@@ -122,13 +122,15 @@ app/[locale]/
                      home, products (search), products/[slug], categories/[slug], cart
   (secure)/          dynamic root layout for auth pages, account area and admin
     (auth)/          sign-in, sign-up, forgot/reset password, verify email
-    account/         customer area (guarded by the DAL): overview, library (My Purchases)
+    account/         customer area (guarded by the DAL): overview, library (My Purchases,
+                     downloads), orders
     checkout/        checkout, result (polling), paddle (Paddle.js), fake (tests only)
     admin/           owner sign-in and dashboard (404 for everyone but the owner):
                      overview, products (list, new, [id], [id]/preview), categories, settings
 app/api/auth/        Better Auth handler (rate limits, policy hooks)
 app/api/webhooks/    one webhook endpoint per payment gateway ([provider])
 app/api/orders/      order status for the checkout result page
+app/api/downloads/   the secure download gateway (ownership, limit, log, pre-signed attachment URL)
 app/api/health/      readiness probe
 app/sitemap.ts       /sitemap.xml (both languages, hreflang alternates)
 app/robots.ts        /robots.txt
@@ -143,9 +145,9 @@ components/layout/   root document, site shell, header, footer, language and the
 components/shared/   EmojiText (server-side Twemoji), LtrText (bidi isolation), PriceDisplay,
                      MoneyText, RichText (sanitized)
 components/ui/       shadcn/ui components
-emails/              bilingual React Email templates
+emails/              bilingual React Email templates (auth emails, receipt)
 features/            cart (signed cookie), checkout (coupons, order placement, fulfilment,
-                     webhooks), library, maintenance;
+                     webhooks), downloads, library, orders (receipts), maintenance;
                      products, categories, settings: data.ts (Prisma reads), queries.ts
                      ('use cache' + tags), schemas.ts (Zod), service.ts (audited owner writes),
                      actions.ts (Server Actions: owner check → Zod → service → updateTag);

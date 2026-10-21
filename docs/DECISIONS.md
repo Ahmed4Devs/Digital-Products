@@ -517,3 +517,25 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 ## 2026-10-21 — Sandbox runs
 
 **Decision.** `docs/SANDBOX_TESTING.md` describes the manual runs through a tunnel for all three gateways. They could not be performed in this environment (no sandbox credentials and no access to the gateways' networks); the automated suite covers the same paths with stubbed provider APIs and the fake gateway.
+
+## 2026-10-21 — No rate limit on reading the session
+
+**Decision.** Better Auth's limiter is turned off for `GET /api/auth/get-session` only. It reads the caller's own session (from the signed cookie cache) and changes nothing, and every storefront page calls it once from the browser for the header's account link (pages are static). A per-IP limit there would lock out customers who share an address and, in the E2E suite (one shared bucket without a client IP), failed pages at random. All endpoints that sign in, send email or change data keep their limits.
+
+## 2026-10-21 — Download gateway
+
+**Decision.** `GET /api/downloads/[entitlementId]/[fileId]?locale=…` checks, in one transaction under a per-customer advisory lock: a fresh session, an entitlement of this customer that is not revoked, a current (non-superseded) file of that product, and fewer than `downloadsPerMinute` (default 5) downloads in the last 60 seconds across all of the customer's products, counted from `DownloadLog` (no Redis). It then writes the log row (keyed hash of the IP, truncated user agent), increments the statistics counter and answers `302` to a pre-signed GET valid for 5 minutes with `Content-Disposition: attachment` (ASCII fallback plus the exact UTF-8 name, RFC 6266) and the stored content type. The URL appears only in the `Location` header (`Cache-Control: no-store`, `Referrer-Policy: no-referrer`), never in pages, emails or logs. Every other outcome redirects to My Purchases with a translated notice ("Please try again in a minute.", "no longer available") or to sign-in. Downloads started by another site (`Sec-Fetch-Site: cross-site`) are not counted. Archived products stay downloadable for their buyers.
+
+**Why a GET.** The button is a plain link so the browser handles the file natively. The only state it writes is the log row the limit is computed from; the cross-site check stops other sites from spending a customer's quota.
+
+## 2026-10-21 — "Updated" badge
+
+**Decision.** A file shows "Updated" in My Purchases when its version is above 1, it was uploaded after the customer's purchase, and the customer has not downloaded it yet. Customers who buy after an update see no badge.
+
+## 2026-10-21 — Receipt emails
+
+**Decision.** A React Email receipt in the order's language (items, discount, tax, total, the SAR amount when charged in SAR, a button to My Purchases, no file links) is queued after the fulfilment commits — from the webhook route and after zero-total orders — through the existing background runner, so a mail failure is logged by error class and never affects the order. `sendReceipt` only sends for paid orders; the owner's "resend" (Phase 8) calls it directly.
+
+## 2026-10-21 — Account pages
+
+**Decision.** The account area gets a section navigation (overview, My Purchases, orders). The orders page lists the customer's last 50 orders with their snapshots, status and amounts; it is separate from My Purchases (spec §10.4).

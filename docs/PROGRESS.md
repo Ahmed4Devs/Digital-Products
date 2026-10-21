@@ -321,3 +321,47 @@ pnpm maintenance:run
 ### Next — Phase 7 (Delivery)
 
 Downloads from My Purchases through `/api/downloads/[entitlementId]/[fileId]` (ownership, revocation, per-minute limit from `DownloadLog`, hashed IP, pre-signed attachment URLs of at most 5 minutes) with the "Updated" badge; receipt emails; the orders page; refunds end to end.
+
+## Phase 7 — Delivery ✅ (tag `phase-07-delivery`)
+
+**Completed:** 2026-10-21
+
+### Built
+
+- **My Purchases** (`/[locale]/account/library`): cover, title, purchase date and one download button per current file, with an "Updated" badge for versions published after the purchase and not yet downloaded; translated notices for the download limit and unavailable files.
+- **Download gateway** (`/api/downloads/[entitlementId]/[fileId]`): fresh session, ownership, revocation, current file, per-minute limit computed from `DownloadLog` under a per-customer lock (configurable, default 5), hashed IP, then a 5-minute pre-signed attachment URL with the UTF-8 file name. Cross-site requests are not counted.
+- **Fulfilment** (from Phase 6): entitlements upserted on (user, product) in the payment transaction, so refunds revoke (rows kept) and re-purchases restore the same row; zero-total orders fulfilled without a gateway.
+- **Receipt emails** in the order's language after commit (webhooks and zero-total orders), with a link to My Purchases and no file links; failures never affect fulfilment.
+- **Orders page** (`/[locale]/account/orders`) with status, items, discounts, tax, totals and the SAR amount; account section navigation.
+- **Session reads** are no longer rate-limited (see DECISIONS).
+
+### Tests
+
+| Suite                                      | Count | Covers                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Integration — `delivery/downloads.test.ts` | 8     | Logged downloads with hashed IPs, ownership, revocation, superseded versions, other products' files, archived products, the per-minute limit across products and its window, nine parallel clicks against a limit of five, the route's redirects (sign-in, cross-site, invalid IDs, limit), real MinIO attachment headers with an Arabic file name, the "Updated" badge rules, revoked products hidden |
+| Integration — `delivery/receipts.test.ts`  | 4     | Receipts after webhook fulfilment and for zero-total orders through Mailpit, Arabic subject and RTL layout, discounts and totals, no download links or signed URLs, nothing for unpaid orders                                                                                                                                                                                                          |
+| Unit — `delivery/disposition.test.ts`      | 2     | Attachment header with UTF-8 names and no header injection                                                                                                                                                                                                                                                                                                                                             |
+| E2E — `delivery.spec.ts`                   | 6     | Purchase → download (file name and content) → five downloads → sixth refused with the translated message → receipt in Mailpit → refund webhook removes access (library, old link, orders page "Refunded") → buying again restores the same entitlement; guests and other customers cannot download; axe on My Purchases, orders and account pages in ar/en × light/dark                                |
+
+Totals: **278 unit + 167 integration (Vitest), 97 E2E (Playwright)**. Coverage: 94.7 % lines overall.
+
+### Verification
+
+```bash
+pnpm services:up
+pnpm check
+pnpm test:e2e
+pnpm dev     # buy a product with a file, then /ar/account/library and /ar/account/orders
+```
+
+### Known limitations
+
+- The exit criterion "a complete test purchase through each gateway" was met with the fake gateway end to end and with stubbed Moyasar, Paddle and PayPal APIs; the real sandbox runs (docs/SANDBOX_TESTING.md) still need credentials and network access to the providers.
+- Owner-initiated refunds, resending receipts and granting/revoking access from the dashboard arrive in Phase 8 (refund webhooks already work end to end).
+- Windows visual baselines remain outdated; Linux baselines are current.
+- `pnpm audit --prod`: no known vulnerabilities.
+
+### Next — Phase 8 (Remaining Dashboard)
+
+Overview metrics; orders (filters, details, resend receipt, refund, grant/revoke access); customers (purchases, ban); coupons; all settings; the audit-log viewer; customer account deletion that keeps financial records.
