@@ -29,10 +29,11 @@ next-env.d.ts
 generated/
 
 # ── Environment files (secrets) ────────────────────────────
-# Every env file is ignored except the committed placeholder template.
+# Every env file is ignored except the committed placeholder templates.
 .env
 .env.*
 !.env.example
+!.env.production.example
 
 # ── Testing ────────────────────────────────────────────────
 coverage/
