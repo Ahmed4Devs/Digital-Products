@@ -13,6 +13,17 @@ function publicImagePatterns(): URL[] {
   return [new URL(`${base.replace(/\/+$/, "")}/**`)];
 }
 
+/**
+ * Local MinIO listens on 127.0.0.1, which the image optimizer refuses by default (SSRF
+ * protection). Allowed only when the configured public bucket itself is on loopback, so
+ * a deployment with a real CDN never relaxes the check.
+ */
+function publicImagesAreLocal(): boolean {
+  const base = process.env.S3_PUBLIC_BASE_URL;
+  if (!base) return false;
+  return ["localhost", "127.0.0.1", "[::1]"].includes(new URL(base).hostname);
+}
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   // Prefetch one static App Shell per route; recommended alongside Cache Components.
@@ -24,8 +35,7 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     qualities: [75],
     remotePatterns: publicImagePatterns(),
-    // Local MinIO listens on 127.0.0.1; only development may optimize from private IPs.
-    dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
+    dangerouslyAllowLocalIP: publicImagesAreLocal(),
   },
   turbopack: {
     rules: {
