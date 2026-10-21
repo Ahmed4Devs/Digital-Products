@@ -215,3 +215,56 @@ pnpm dev            # http://localhost:3000/ar, /en/products, /ar/products/month
 ### Next — Phase 5 (Owner Product Management)
 
 Admin shell and navigation; product CRUD with bilingual tabs, USD price and optional fixed SAR price; categories; pre-signed uploads to `pending/` with `HeadObject` verification and file versioning; publish/archive; `updateTag` invalidation, audit log and sanitized rich text on write; exchange-rate setting.
+
+## Phase 5 — Owner Product Management ✅ (tag `phase-05-admin-products`)
+
+**Completed:** 2026-10-21
+
+### Built
+
+- **Dashboard shell:** sidebar navigation (overview, products, categories, settings) that becomes a scrollable bar on small screens, current page marked with `aria-current`, "view store" link, language and theme switchers, sign-out. `noindex`; 404 for everyone but the owner (proxy, layout, every page and every action).
+- **Products:**
+  - List with search, status filter, sorting and pagination, all in the URL and validated with Zod (shadcn `Table`, server-rendered).
+  - Form with Arabic/English tabs (title, short description, rich-text description, SEO title and description), live grapheme counters, USD price, optional fixed SAR and compare-at prices (Arabic-Indic digits accepted), slug (generated from the title when empty), category and "featured". Errors appear next to their fields and on the tab that has them; typed values survive a failed submission.
+  - Lifecycle: publish (needs a file), archive, back to draft (unsold only), delete (unsold drafts only), preview with the exact storefront view, "view in store".
+- **Uploads (§17.5 §8):** pre-signed PUT to `pending/` with signed Content-Type and Content-Length; signed upload tickets; server-side `HeadObject`, size/type limits, file signatures and real image dimensions; server-side copy to the final key (files private, images public with immutable caching); cover replacement, gallery of up to 8 images, image descriptions in both languages; file versions with `supersededAt`, history, and removal that keeps downloaded files. Progress is shown and announced.
+- **Rich text:** Tiptap editor limited to the sanitizer's allowlist, loaded lazily in the admin only; sanitized again on write and on render. Lazy emoji picker (80 curated emoji drawn with the self-hosted Twemoji) for titles, short descriptions and the editor.
+- **Categories:** create, rename (with slug), reorder (renumbered without gaps), delete when empty.
+- **Settings:** USD → SAR exchange rate (normalized to six decimals); every SAR price on the store follows on the next request.
+- **Every mutation:** `requireOwner()` (fresh session) → Zod (strict) → one transaction with an `AuditLog` row holding a before/after diff → `updateTag` for the affected catalog tags.
+- **Shared code:** `lib/storage`, `lib/audit`, `lib/actions`, owner input parsing in `lib/money`, storefront paths in `lib/seo/paths.ts`, a product detail view shared by the store and the preview, and new shadcn-style primitives (table, tabs, badge, native select, textarea, popover, alert dialog).
+
+### Tests
+
+| Suite                                          | Count | Covers                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integration — `admin/actions.test.ts`          | 13    | Every owner action refused for guests and customers with nothing written, revoked owner session refused at once, create/update with sanitized rich text and minimal audit diffs, validation keys, duplicate slugs, publish rules and immediate store visibility, sold products, deletion, categories, exchange rate, uploads through actions |
+| Integration — `admin/uploads.test.ts`          | 12    | Against real MinIO: server-chosen keys and types, refused types and sizes, storage rejecting a body that differs from the signature, recorded size and MD5 from storage, disguised content, forged/tampered/expired/foreign-key tickets, versions, retiring downloaded files, image dimensions, cover replacement, gallery cap               |
+| Integration — `admin/admin-data.test.ts`       | 6     | Owner list across statuses, filters, literal wildcards, sorting per language, pagination, edit and preview reads, category counts                                                                                                                                                                                                            |
+| Unit — storage, tickets, audit, actions, money | 50    | Extension allowlist, size limits, every file signature, key generation, display-name sanitizing (paths, bidi controls, length), ticket signing and expiry, audit values and diffs, action error mapping, FormData parsing, amount and rate parsing with Arabic digits, form schemas, emoji files                                             |
+| E2E — `admin.spec.ts`                          | 8     | Create → upload file and cover → publish → visible in the store with its optimized image and SAR price → archive → 404; disguised file refused; Arabic validation messages with values kept; categories added, reordered and shown in the store; guests get 404; axe on four dashboard pages in ar/en × light/dark                           |
+
+Totals: **245 unit + 114 integration (Vitest), 82 E2E (Playwright)**. Coverage: 91.6 % lines overall.
+
+### Verification
+
+```bash
+pnpm services:up
+pnpm db:migrate && pnpm db:seed
+pnpm check
+pnpm test:e2e
+pnpm dev            # sign in at /ar/admin/sign-in, then /ar/admin/products/new
+```
+
+### Known limitations
+
+- The overview shows product counts only; sales metrics, orders, customers, coupons, the remaining settings and the audit-log viewer arrive in Phase 8 (audit rows are already written).
+- Gallery images cannot be reordered yet, and image descriptions are set at upload time.
+- Unconfirmed uploads under `pending/` are deleted by the maintenance task, which arrives in Phase 6.
+- In this cloud environment MinIO ran from a stand-in image (`bitnamilegacy/minio`) because the project's Chainguard image registry was unreachable; the project's `docker/minio/init.sh` configured it.
+- Windows visual baselines remain outdated (see Phase 4); Linux baselines are current.
+- `pnpm audit --prod`: no known vulnerabilities.
+
+### Next — Phase 6 (Cart, Checkout and Payments)
+
+Signed cart cookie; checkout with the sign-in gate, coupons with reservations and server-side pricing; order creation with rate limits; the `PaymentProvider` interface with Moyasar, Paddle, PayPal and the test-only fake adapter; webhooks with signature verification, idempotency and amount/currency matching; the result page with polling; `pnpm maintenance:run`.

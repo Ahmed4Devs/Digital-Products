@@ -397,7 +397,7 @@ The limiter uses a custom PostgreSQL storage (`lib/rate-limit`): one atomic `INS
 
 ## 2026-10-21 — Images
 
-**Decision.** `next/image` with AVIF then WebP, `qualities: [75]` (required since Next.js 16) and `remotePatterns` limited to `S3_PUBLIC_BASE_URL`. Optimizing from private IPs (local MinIO) is allowed only in development. Only the main product image is preloaded (LCP). Products without images show a neutral placeholder.
+**Decision.** `next/image` with AVIF then WebP, `qualities: [75]` (required since Next.js 16) and `remotePatterns` limited to `S3_PUBLIC_BASE_URL`. Optimizing from private IPs (local MinIO) is allowed only in development (superseded in Phase 5: only when the public bucket is on loopback). Only the main product image is preloaded (LCP). Products without images show a neutral placeholder.
 
 ## 2026-10-21 — Demo catalog and E2E data
 
@@ -415,3 +415,60 @@ The limiter uses a custom PostgreSQL storage (`lib/rate-limit`): one atomic `INS
 | ---------------------------- | ----------------------------------------------------- |
 | `sanitize-html`              | Allowlist sanitizer for product rich text (spec §5.1) |
 | `@types/sanitize-html` (dev) | Types for it                                          |
+
+## 2026-10-21 — Owner uploads: pre-signed PUT, signed tickets, storage verification (§17.5 §8)
+
+**Decision.**
+
+- The browser uploads straight to storage with a **pre-signed PUT** to a server-generated key `pending/{uuid}` in the **private** bucket. `Content-Type` and `Content-Length` are part of the signature (the presigner leaves `Content-Type` unsigned unless asked), so storage itself rejects a body of another type or size (verified against MinIO).
+- The type is chosen by the server from an **extension allowlist** (`lib/storage/policy.ts`); the browser's MIME guess is ignored because it is often empty or wrong. SVG, HTML, scripts and executables are never accepted. Limits: images 5 MiB and 100–10,000 px per side; files 2 GiB (one PUT; S3 allows 5 GiB).
+- The upload URL comes with a **signed ticket** (HMAC with a key derived from `BETTER_AUTH_SECRET`, 15-minute expiry) holding the key, product, slot, type, sanitized file name and declared size. Confirmation accepts nothing else, so it can never point at a key, product or slot the server did not issue, without a pending-uploads table.
+- On confirmation the server calls `HeadObject`, takes size, ETag and type **from storage**, re-checks the limits, reads the first bytes to match the format's **signature** (PDF, ZIP family, PNG, JPEG, WebP, AVIF, MP3/MP4/WAV, fonts, PSD, 7z, RAR), reads images completely to measure them with `image-size` (EXIF rotation respected), then server-side copies the object to its final key — `products/{id}/files/{uuid}` in the private bucket, or `products/{id}/images/{uuid}.{ext}` in the public bucket with an immutable cache header — records it, and deletes the pending object. Any refusal deletes the pending object.
+- A new version supersedes the previous one with a conditional update (`supersededAt`), version + 1. Removing a file that has been downloaded only marks it superseded; a file never downloaded is deleted with its object. A published product keeps at least one file.
+- Pre-signed **POST** policies (which can enforce a size range) were rejected because Cloudflare R2 does not support them.
+
+**Consequence.** Unconfirmed `pending/` objects are cleaned up by the maintenance task (Phase 6). Production buckets need CORS rules allowing `PUT` from the store's origin (documented in Phase 10). The local MinIO now also allows the E2E origin `http://localhost:3100`.
+
+## 2026-10-21 — Owner Server Actions
+
+**Decision.** Each action calls `requireOwner()` (fresh session read), validates with Zod (strict objects; unknown keys rejected), runs an audited service function in one transaction, then calls `updateTag`. Services live in `features/*/service.ts` and take the database client as a parameter, so integration tests run them and the actions against the real database. Actions return **translation keys** (`admin.errors.*`, `admin.notices.*`), never text: `next/root-params` is not available in Server Actions, so they cannot know the visitor's language. Expected failures are `ActionError`s; Zod errors map to "invalid"; anything else is logged and shown generically.
+
+Forms call the action from `onSubmit` inside a transition instead of `<form action>`, so React's automatic form reset does not wipe typed values or rich-text state after a validation error. A product form requires JavaScript anyway (the editor).
+
+**Cache tags.** Product writes update `products`, `categories` (published counts) and `product:{id}`; category writes update `categories` and `products` (cards show category names); the exchange rate updates `settings` and `products`.
+
+## 2026-10-21 — Product lifecycle rules
+
+**Decision.** New products start as drafts. Publishing requires at least one current file and keeps the first `publishedAt` on re-publication ("newest first" stays stable). A product that has been sold can be archived but never returns to draft and is never deleted; only unsold, never-downloaded drafts can be deleted, together with their images and files. Archived products disappear from the store.
+
+## 2026-10-21 — Audit log format
+
+**Decision.** `AuditLog.diff` is `{ changes: { field: { from, to } } }` with only the fields that changed (timestamps ignored; dates, BigInts and Decimals as strings), plus `details` for actions that are not field changes (reorders). Creations diff against nothing, deletions against nothing on the other side. The row is written in the same transaction as the change.
+
+## 2026-10-21 — Dashboard tables without TanStack Table
+
+**Decision.** The product list is a Server Component built from the shadcn/ui `Table` primitives with server-side pagination (20 per page), sorting (`aria-sort`, links) and filtering (status, search) driven by the URL and validated with Zod. shadcn's Data Table recipe adds TanStack Table for client-side state, which server-side pagination and sorting do not need; leaving it out keeps the dashboard light and every state linkable.
+
+## 2026-10-21 — Rich-text editor and emoji picker
+
+**Decision.** Tiptap 3 (StarterKit with headings 2–3, lists, quotes, links; code, strike, underline and rules disabled) so the editor can only produce what the sanitizer keeps. It is loaded with `next/dynamic` and `ssr: false` inside the admin only; the hidden input that carries the HTML lives outside the lazy chunk, so submitting before the editor loads keeps the existing description. Links are limited to http(s) and mailto. The HTML is sanitized again on the server before it is stored and once more when rendered.
+
+The emoji picker is a curated set of 80 single emoji whose grid is loaded on first open and drawn with the self-hosted Twemoji files (a unit test checks every file exists). Emoji are inserted as text; the storefront renders them with Twemoji.
+
+## 2026-10-21 — Optimizing images from local storage
+
+**Decision.** `images.dangerouslyAllowLocalIP` is enabled only when `S3_PUBLIC_BASE_URL` itself is a loopback address (local MinIO), replacing the Phase 4 "development only" rule. The E2E production build then serves real optimized images; a deployment with a real CDN never relaxes the image optimizer's private-address protection.
+
+## 2026-10-21 — E2E ordering and sessions
+
+**Decision.** `admin.spec.ts` runs as a second Playwright project that depends on the storefront project, because publishing products and adding categories change the listings the storefront specs assert. Dashboard specs create the owner's session row directly and set its signed cookie (`tests/support/e2e-session.ts`), so the per-account sign-in limit is not used up; sign-in itself stays covered by `auth.spec.ts`. Integration test files that create catalog data restore it afterwards (`tests/support/catalog-cleanup.ts`), because all files share one database.
+
+## 2026-10-21 — Dependencies added in Phase 5
+
+| Package                                               | Why                                                                                          |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | S3 API for MinIO and R2: pre-signed PUT/GET, HeadObject, server-side copy, listing, deletion |
+| `image-size`                                          | Reads image type and dimensions from bytes, without native code                              |
+| `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`  | Admin-only rich-text editor, lazy-loaded                                                     |
+
+All are actively maintained; versions were checked with `npm view` and pinned by the lockfile.
