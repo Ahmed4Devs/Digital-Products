@@ -11,7 +11,8 @@
       "settings": "Settings",
       "orders": "Orders",
       "customers": "Customers",
-      "coupons": "Coupons"
+      "coupons": "Coupons",
+      "audit": "Audit log"
     }
   },
   "overview": {
@@ -543,6 +544,86 @@
       "reserved": "Held",
       "redeemed": "Used",
       "released": "Released"
+    }
+  },
+  "audit": {
+    "title": "Audit log",
+    "description": "Every change made from the dashboard, newest first.",
+    "filters": "Filter the audit log",
+    "entityFilter": "Section",
+    "entityId": "Record ID",
+    "apply": "Apply",
+    "results": "Entries: {count, number, integer}",
+    "none": "No entries match.",
+    "columns": {
+      "time": "When and who",
+      "action": "Action",
+      "entity": "Record",
+      "changes": "Changes"
+    },
+    "system": "System",
+    "empty": "empty",
+    "yes": "Yes",
+    "no": "No",
+    "noChanges": "No field changes.",
+    "change": "<from></from> → <to></to>",
+    "entities": {
+      "all": "All",
+      "product": "Product",
+      "category": "Category",
+      "order": "Order",
+      "entitlement": "Access",
+      "user": "Customer",
+      "coupon": "Coupon",
+      "settings": "Settings"
+    },
+    "actions": {
+      "product": {
+        "create": "Product created",
+        "update": "Product edited",
+        "delete": "Product deleted",
+        "publish": "Product published",
+        "archive": "Product archived",
+        "unpublish": "Product moved to draft"
+      },
+      "product_file": {
+        "add": "File added",
+        "replace": "New file version",
+        "delete": "File deleted",
+        "retire": "File removed (kept for buyers' history)"
+      },
+      "product_image": {
+        "add": "Image added",
+        "delete": "Image removed"
+      },
+      "category": {
+        "create": "Category created",
+        "update": "Category edited",
+        "delete": "Category deleted",
+        "reorder": "Categories reordered"
+      },
+      "order": {
+        "refund": "Order refunded",
+        "refund_requested": "Refund requested",
+        "resend_receipt": "Receipt resent"
+      },
+      "entitlement": {
+        "grant": "Access granted",
+        "revoke": "Access revoked"
+      },
+      "user": {
+        "ban": "Customer banned",
+        "unban": "Ban lifted"
+      },
+      "coupon": {
+        "create": "Coupon created",
+        "update": "Coupon edited",
+        "activate": "Coupon activated",
+        "deactivate": "Coupon deactivated"
+      },
+      "settings": {
+        "update": "Settings changed"
+      }
     }
   }
 }

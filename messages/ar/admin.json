@@ -11,7 +11,8 @@
       "settings": "الإعدادات",
       "orders": "الطلبات",
       "customers": "العملاء",
-      "coupons": "القسائم"
+      "coupons": "القسائم",
+      "audit": "سجل التدقيق"
     }
   },
   "overview": {
@@ -543,6 +544,86 @@
       "reserved": "محجوز",
       "redeemed": "مستخدم",
       "released": "مُحرَّر"
+    }
+  },
+  "audit": {
+    "title": "سجل التدقيق",
+    "description": "كل تغيير أُجري من لوحة التحكم، الأحدث أولًا.",
+    "filters": "تصفية سجل التدقيق",
+    "entityFilter": "القسم",
+    "entityId": "معرّف السجل",
+    "apply": "تطبيق",
+    "results": "الإدخالات: {count, number, integer}",
+    "none": "لا توجد إدخالات مطابقة.",
+    "columns": {
+      "time": "الوقت والمنفّذ",
+      "action": "الإجراء",
+      "entity": "السجل",
+      "changes": "التغييرات"
+    },
+    "system": "النظام",
+    "empty": "فارغ",
+    "yes": "نعم",
+    "no": "لا",
+    "noChanges": "لا تغييرات في الحقول.",
+    "change": "<from></from> ← <to></to>",
+    "entities": {
+      "all": "الكل",
+      "product": "منتج",
+      "category": "تصنيف",
+      "order": "طلب",
+      "entitlement": "وصول",
+      "user": "عميل",
+      "coupon": "قسيمة",
+      "settings": "الإعدادات"
+    },
+    "actions": {
+      "product": {
+        "create": "إنشاء منتج",
+        "update": "تعديل منتج",
+        "delete": "حذف منتج",
+        "publish": "نشر منتج",
+        "archive": "أرشفة منتج",
+        "unpublish": "إعادة منتج إلى المسودات"
+      },
+      "product_file": {
+        "add": "إضافة ملف",
+        "replace": "إصدار جديد من ملف",
+        "delete": "حذف ملف",
+        "retire": "إزالة ملف (يبقى في سجل المشترين)"
+      },
+      "product_image": {
+        "add": "إضافة صورة",
+        "delete": "إزالة صورة"
+      },
+      "category": {
+        "create": "إنشاء تصنيف",
+        "update": "تعديل تصنيف",
+        "delete": "حذف تصنيف",
+        "reorder": "إعادة ترتيب التصنيفات"
+      },
+      "order": {
+        "refund": "استرداد طلب",
+        "refund_requested": "طلب استرداد",
+        "resend_receipt": "إعادة إرسال إيصال"
+      },
+      "entitlement": {
+        "grant": "منح وصول",
+        "revoke": "إلغاء وصول"
+      },
+      "user": {
+        "ban": "حظر عميل",
+        "unban": "رفع حظر"
+      },
+      "coupon": {
+        "create": "إنشاء قسيمة",
+        "update": "تعديل قسيمة",
+        "activate": "تفعيل قسيمة",
+        "deactivate": "إيقاف قسيمة"
+      },
+      "settings": {
+        "update": "تغيير الإعدادات"
+      }
     }
   }
 }

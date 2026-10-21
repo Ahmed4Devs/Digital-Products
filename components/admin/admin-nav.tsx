@@ -5,6 +5,7 @@ import {
   LayoutDashboardIcon,
   PackageIcon,
   ReceiptTextIcon,
+  ScrollTextIcon,
   SettingsIcon,
   TicketPercentIcon,
   UsersIcon,
@@ -21,6 +22,7 @@ const ITEMS = [
   { href: "/admin/customers", key: "customers", icon: UsersIcon },
   { href: "/admin/coupons", key: "coupons", icon: TicketPercentIcon },
   { href: "/admin/settings", key: "settings", icon: SettingsIcon },
+  { href: "/admin/audit", key: "audit", icon: ScrollTextIcon },
 ] as const;
 
 /** Dashboard navigation; the current section is marked for assistive technology. */
