@@ -62,7 +62,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?set MINIO_ROOT_USER in .env.local}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?set MINIO_ROOT_PASSWORD in .env.local}
       # Browser uploads use pre-signed PUT URLs from the app origin only.
-      MINIO_API_CORS_ALLOW_ORIGIN: ${APP_URL:?set APP_URL in .env.local}
+      # The app's origin, plus the production build that E2E tests run on port 3100.
+      MINIO_API_CORS_ALLOW_ORIGIN: ${APP_URL:?set APP_URL in .env.local},http://localhost:3100
     ports:
       - "127.0.0.1:9010:9000"
       - "127.0.0.1:9011:9001"

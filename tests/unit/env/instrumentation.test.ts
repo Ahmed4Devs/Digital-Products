@@ -8,6 +8,12 @@ const validEnv = {
   MAIL_FROM: "store@example.com",
   MAILPIT_URL: "http://127.0.0.1:8032",
   TEST_DOUBLES: "on",
+  S3_ENDPOINT: "http://127.0.0.1:9010",
+  S3_REGION: "us-east-1",
+  S3_ACCESS_KEY_ID: "instrumentation-access-key",
+  S3_SECRET_ACCESS_KEY: "instrumentation-storage-secret",
+  S3_BUCKET_PRIVATE: "files",
+  S3_BUCKET_PUBLIC: "media",
 };
 
 function stubEnv(values: Record<string, string | undefined>) {

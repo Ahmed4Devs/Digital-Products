@@ -54,6 +54,16 @@ export const serverEnvSchema = z
     TURNSTILE_SITE_KEY: z.string().min(1).optional(),
     TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
 
+    // Object storage (MinIO locally, Cloudflare R2 in production), S3 API with
+    // path-style addressing. Product files go to the private bucket only; the public
+    // bucket holds product images (spec §5.1, §10.6).
+    S3_ENDPOINT: z.url({ protocol: /^https?$/, error: requiredOr("must be an http(s) URL") }),
+    S3_REGION: z.string({ error: requiredOr("is required") }).min(1),
+    S3_ACCESS_KEY_ID: z.string({ error: requiredOr("is required") }).min(1),
+    S3_SECRET_ACCESS_KEY: z.string({ error: requiredOr("is required") }).min(1),
+    S3_BUCKET_PRIVATE: z.string({ error: requiredOr("is required") }).min(3),
+    S3_BUCKET_PUBLIC: z.string({ error: requiredOr("is required") }).min(3),
+
     // Replaces external services (Turnstile, the compromised-password API and, from
     // Phase 6, the payment gateways) with local fakes for automated tests. Refused
     // unless APP_URL is loopback, so a deployed server can never enable it.
@@ -77,6 +87,14 @@ export const serverEnvSchema = z
           ctx.addIssue({ code: "custom", path: [key], message: "is required" });
         }
       }
+    }
+
+    if (env.S3_BUCKET_PRIVATE === env.S3_BUCKET_PUBLIC) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["S3_BUCKET_PRIVATE"],
+        message: "must differ from S3_BUCKET_PUBLIC (product files are never public)",
+      });
     }
 
     if (env.RESEND_API_KEY === undefined && env.MAILPIT_URL === undefined) {
@@ -106,6 +124,14 @@ export const serverEnvSchema = z
 
     if (appUrl.protocol !== "https:") {
       ctx.addIssue({ code: "custom", path: ["APP_URL"], message: "must use https in production" });
+    }
+
+    if (new URL(env.S3_ENDPOINT).protocol !== "https:") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["S3_ENDPOINT"],
+        message: "must use https in production",
+      });
     }
 
     // The production database is a separate service; never connect to it without TLS.

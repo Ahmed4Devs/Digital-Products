@@ -10,6 +10,12 @@ const devEnv = {
   MAILPIT_URL: "http://127.0.0.1:8032",
   TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
   TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+  S3_ENDPOINT: "http://127.0.0.1:9010",
+  S3_REGION: "us-east-1",
+  S3_ACCESS_KEY_ID: "dev-access-key",
+  S3_SECRET_ACCESS_KEY: "dev-storage-secret",
+  S3_BUCKET_PRIVATE: "digital-products-files",
+  S3_BUCKET_PUBLIC: "digital-products-media",
 };
 
 const prodEnv = {
@@ -21,6 +27,12 @@ const prodEnv = {
   RESEND_API_KEY: "re_live_key",
   TURNSTILE_SITE_KEY: "0x4AAAAAAA",
   TURNSTILE_SECRET_KEY: "0x4AAAAAAA-secret",
+  S3_ENDPOINT: "https://account-id.r2.cloudflarestorage.com",
+  S3_REGION: "auto",
+  S3_ACCESS_KEY_ID: "r2-access-key",
+  S3_SECRET_ACCESS_KEY: "r2-storage-secret",
+  S3_BUCKET_PRIVATE: "store-files",
+  S3_BUCKET_PUBLIC: "store-media",
 };
 
 const defaults = {
@@ -88,6 +100,9 @@ describe("parseServerEnv", () => {
     const message = errorOf({ ...devEnv, NODE_ENV: "production", APP_URL: "http://shop.example" });
     expect(message).not.toContain("dev-secret");
     expect(message).not.toContain(devEnv.DATABASE_URL);
+    expect(errorOf({ ...devEnv, S3_ENDPOINT: "not a url" })).not.toContain(
+      devEnv.S3_SECRET_ACCESS_KEY,
+    );
   });
 
   it("ignores unrelated environment variables", () => {
@@ -187,6 +202,35 @@ describe("authentication, email and bot protection", () => {
       errorOf({ ...devEnv, APP_URL: "http://192.168.1.20:3000", TEST_DOUBLES: "on" }),
     ).toContain("TEST_DOUBLES");
     expect(errorOf({ ...devEnv, TEST_DOUBLES: "yes" })).toContain("TEST_DOUBLES");
+  });
+});
+
+describe("object storage", () => {
+  it("requires the endpoint, credentials and both buckets", () => {
+    const message = errorOf({ NODE_ENV: "development" });
+    for (const key of [
+      "S3_ENDPOINT",
+      "S3_REGION",
+      "S3_ACCESS_KEY_ID",
+      "S3_SECRET_ACCESS_KEY",
+      "S3_BUCKET_PRIVATE",
+      "S3_BUCKET_PUBLIC",
+    ]) {
+      expect(message).toContain(`${key}: is required`);
+    }
+  });
+
+  it("never lets product files share the public bucket", () => {
+    expect(errorOf({ ...devEnv, S3_BUCKET_PUBLIC: devEnv.S3_BUCKET_PRIVATE })).toContain(
+      "S3_BUCKET_PRIVATE: must differ from S3_BUCKET_PUBLIC",
+    );
+  });
+
+  it("requires https storage in production, except for a fully local run", () => {
+    expect(errorOf({ ...prodEnv, S3_ENDPOINT: "http://storage.example.com" })).toContain(
+      "S3_ENDPOINT: must use https in production",
+    );
+    expect(() => parseServerEnv({ ...devEnv, NODE_ENV: "production" })).not.toThrow();
   });
 });
 
