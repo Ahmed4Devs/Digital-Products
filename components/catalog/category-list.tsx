@@ -1,11 +1,8 @@
+import { categoryHref } from "@/lib/seo/paths";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { CategorySummary } from "@/features/products/types";
 import { Link } from "@/i18n/navigation";
 import { localized } from "@/lib/text";
-
-export function categoryHref(slug: string): string {
-  return `/categories/${encodeURIComponent(slug)}`;
-}
 
 export async function CategoryList({ categories }: { categories: CategorySummary[] }) {
   const [locale, t] = await Promise.all([getLocale(), getTranslations("store.category")]);

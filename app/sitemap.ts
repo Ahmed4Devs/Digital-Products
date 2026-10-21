@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
-import { categoryHref } from "@/components/catalog/category-list";
-import { productHref } from "@/components/catalog/product-card";
+import { categoryHref, productHref } from "@/lib/seo/paths";
 import { getCategories } from "@/features/categories/queries";
 import { getPublishedProductSlugs } from "@/features/products/queries";
 import { routing } from "@/i18n/routing";

@@ -1,3 +1,4 @@
+import { productHref } from "@/lib/seo/paths";
 import { getLocale } from "next-intl/server";
 import { EmojiText } from "@/components/shared/emoji-text";
 import { PriceDisplay } from "@/components/shared/price-display";
@@ -10,10 +11,6 @@ type ProductCardProps = {
   product: ProductSummary;
   usdToSarRate: string;
 };
-
-export function productHref(slug: string): string {
-  return `/products/${encodeURIComponent(slug)}`;
-}
 
 export async function ProductCard({ product, usdToSarRate }: ProductCardProps) {
   const locale = await getLocale();

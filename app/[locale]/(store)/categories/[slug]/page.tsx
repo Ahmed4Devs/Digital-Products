@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/catalog/breadcrumbs";
-import { categoryHref } from "@/components/catalog/category-list";
+import { categoryHref } from "@/lib/seo/paths";
 import { EmptyState } from "@/components/catalog/empty-state";
 import { ProductGrid } from "@/components/catalog/product-grid";
 import { getCategories, getCategoryBySlug } from "@/features/categories/queries";
