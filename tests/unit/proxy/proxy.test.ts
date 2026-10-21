@@ -117,15 +117,31 @@ describe("CSP nonces", () => {
     expect(second.headers.get("x-middleware-request-x-nonce")).not.toBe(nonce);
   });
 
-  it("keeps the nonce policy on the admin's 404 rewrite", async () => {
+  it("gives the admin's 404 rewrite the store's static policy", async () => {
     const response = await proxy(request("/en/admin/orders"));
     expect(response.headers.get("x-middleware-rewrite")).toMatch(/_not-found$/);
-    expect(response.headers.get("content-security-policy")).toMatch(/'nonce-/);
+    const policy = response.headers.get("content-security-policy") ?? "";
+    expect(policy).toContain("script-src 'self' 'unsafe-inline'");
+    expect(policy).not.toMatch(/'nonce-/);
   });
 
   it("leaves the static policy of catalog routes to next.config", async () => {
     const response = await proxy(request("/en/products"));
     expect(response.headers.get("content-security-policy")).toBeNull();
     expect(response.headers.get("x-middleware-request-x-nonce")).toBeNull();
+  });
+});
+
+describe("request bodies", () => {
+  it("never consumes the body of a Server Action POST to a nonce route", async () => {
+    const post = new NextRequest(new URL("/en/checkout", "http://localhost:3000"), {
+      method: "POST",
+      headers: { cookie: SESSION_COOKIE, "next-action": "abc" },
+      body: '["payload"]',
+    });
+    const response = await proxy(post);
+    expect(response.headers.get("x-middleware-request-x-nonce")).toBeTruthy();
+    expect(post.bodyUsed).toBe(false);
+    expect(await post.text()).toBe('["payload"]');
   });
 });

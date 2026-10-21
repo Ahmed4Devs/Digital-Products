@@ -9,6 +9,7 @@ import {
   cspContextFromEnv,
   noncePolicy,
   nonceRouteFor,
+  staticPolicy,
   type NonceRoute,
 } from "@/lib/security/csp";
 
@@ -93,7 +94,9 @@ function withNonce(request: NextRequest, route: NonceRoute) {
   const headers = new Headers(request.headers);
   headers.set("Content-Security-Policy", policy);
   headers.set("x-nonce", nonce);
-  return { request: new NextRequest(request, { headers }), headers, policy };
+  // next-intl reads only the URL and headers. A body-less copy keeps the original
+  // request's body (Server Action POSTs) untouched for the app.
+  return { request: new NextRequest(request.url, { headers }), headers, policy };
 }
 
 export function createProxy(lookUp: OwnerSessionLookup) {
@@ -108,20 +111,22 @@ export function createProxy(lookUp: OwnerSessionLookup) {
       return NextResponse.redirect(signIn);
     }
 
-    const route = nonceRouteFor(pathname);
-    const secured = route ? withNonce(request, route) : null;
-
     const adminArea = ADMIN_AREA.exec(pathname);
-    let response: NextResponse;
     if (adminArea && !(await isOwnerRequest(request, lookUp))) {
-      // A path no route matches renders the standard not-found page with status 404.
-      response = NextResponse.rewrite(new URL(`/${adminArea[1]}/admin/_not-found`, request.url), {
-        request: secured ? { headers: secured.headers } : undefined,
-      });
-    } else {
-      response = handleI18nRouting(secured?.request ?? request);
+      // No route matches this path, so the store's translated 404 page renders with
+      // status 404. It is a store page, so it gets the store's static policy.
+      const response = NextResponse.rewrite(
+        new URL(`/${adminArea[1]}/admin/_not-found`, request.url),
+      );
+      response.headers.set("Content-Security-Policy", staticPolicy(cspContextFromEnv()));
+      return response;
     }
-    if (secured) response.headers.set("Content-Security-Policy", secured.policy);
+
+    const route = nonceRouteFor(pathname);
+    if (!route) return handleI18nRouting(request);
+    const secured = withNonce(request, route);
+    const response = handleI18nRouting(secured.request);
+    response.headers.set("Content-Security-Policy", secured.policy);
     return response;
   };
 }
