@@ -20,25 +20,155 @@ const postgresUrl = z.url({
   error: requiredOr("must be a postgres:// or postgresql:// URL"),
 });
 
+/** Comma-separated list → trimmed, non-empty entries. */
+const commaList = z.string().transform((value) =>
+  value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean),
+);
+
+const GATEWAY_VARIABLES = [
+  ["MOYASAR_SECRET_KEY", "MOYASAR_WEBHOOK_SECRET"],
+  ["PADDLE_API_KEY", "PADDLE_CLIENT_TOKEN", "PADDLE_WEBHOOK_SECRET"],
+  ["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_WEBHOOK_ID"],
+] as const;
+
 export const serverEnvSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     APP_URL: z.url({ protocol: /^https?$/, error: requiredOr("must be an http(s) URL") }),
     DATABASE_URL: postgresUrl,
     DATABASE_POOL_MAX: z.coerce.number().int().min(1).max(100).default(10),
+
+    // Authentication. The secret signs cookies and tokens and keys the IP hashes.
+    BETTER_AUTH_SECRET: z.string({ error: requiredOr("is required") }).min(32, {
+      error: "must be at least 32 characters (use `openssl rand -base64 32`)",
+    }),
+    // Client IP resolution for rate limits: headers to read, and the reverse proxies
+    // allowed to append to a forwarded chain (CIDRs). See docs/DECISIONS.md.
+    AUTH_IP_HEADERS: commaList.default(["x-forwarded-for"]),
+    AUTH_TRUSTED_PROXIES: commaList.default([]),
+
+    // Email: Resend in production, Mailpit locally.
+    MAIL_FROM: z.string({ error: requiredOr("is required") }).min(3),
+    RESEND_API_KEY: z.string().min(1).optional(),
+    MAILPIT_URL: z.url({ protocol: /^https?$/, error: "must be an http(s) URL" }).optional(),
+
+    // Cloudflare Turnstile on customer sign-up. The site key is public by design and is
+    // handed to the widget at request time, so it needs no NEXT_PUBLIC_ prefix.
+    TURNSTILE_SITE_KEY: z.string().min(1).optional(),
+    TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
+
+    // Object storage (MinIO locally, Cloudflare R2 in production), S3 API with
+    // path-style addressing. Product files go to the private bucket only; the public
+    // bucket holds product images (spec §5.1, §10.6).
+    S3_ENDPOINT: z.url({ protocol: /^https?$/, error: requiredOr("must be an http(s) URL") }),
+    S3_REGION: z.string({ error: requiredOr("is required") }).min(1),
+    S3_ACCESS_KEY_ID: z.string({ error: requiredOr("is required") }).min(1),
+    S3_SECRET_ACCESS_KEY: z.string({ error: requiredOr("is required") }).min(1),
+    S3_BUCKET_PRIVATE: z.string({ error: requiredOr("is required") }).min(3),
+    S3_BUCKET_PUBLIC: z.string({ error: requiredOr("is required") }).min(3),
+
+    // Payment gateways (spec §10.2). Each one is optional and available at checkout only
+    // when all of its variables are set and the owner has enabled it in the settings.
+    // Use test/sandbox keys everywhere except the live store.
+    MOYASAR_SECRET_KEY: z.string().min(1).optional(),
+    MOYASAR_WEBHOOK_SECRET: z.string().min(16).optional(),
+    PADDLE_API_KEY: z.string().min(1).optional(),
+    PADDLE_CLIENT_TOKEN: z.string().min(1).optional(),
+    PADDLE_WEBHOOK_SECRET: z.string().min(1).optional(),
+    PADDLE_ENVIRONMENT: z.enum(["sandbox", "production"]).default("sandbox"),
+    // The store's prices include tax by default, matching how prices are shown.
+    PADDLE_TAX_MODE: z.enum(["internal", "external"]).default("internal"),
+    PADDLE_TAX_CATEGORY: z.string().min(1).default("standard"),
+    PAYPAL_CLIENT_ID: z.string().min(1).optional(),
+    PAYPAL_CLIENT_SECRET: z.string().min(1).optional(),
+    PAYPAL_WEBHOOK_ID: z.string().min(1).optional(),
+    PAYPAL_ENVIRONMENT: z.enum(["sandbox", "live"]).default("sandbox"),
+
+    // Replaces external services (Turnstile, the compromised-password API) with local
+    // fakes and adds the test-only fake payment gateway, for automated tests. Refused
+    // unless APP_URL is loopback, so a deployed server can never enable it.
+    TEST_DOUBLES: z.enum(["on", "off"]).default("off"),
   })
   .superRefine((env, ctx) => {
+    const appUrl = new URL(env.APP_URL);
+    const testDoubles = env.TEST_DOUBLES === "on";
+
+    if (testDoubles && !isLoopback(appUrl.hostname)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["TEST_DOUBLES"],
+        message: "can only be enabled when APP_URL is a loopback address",
+      });
+    }
+
+    if (!testDoubles) {
+      for (const key of ["TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY"] as const) {
+        if (env[key] === undefined) {
+          ctx.addIssue({ code: "custom", path: [key], message: "is required" });
+        }
+      }
+    }
+
+    for (const group of GATEWAY_VARIABLES) {
+      const missing = group.filter((key) => env[key] === undefined);
+      // All or nothing: a half-configured gateway is a typo, not a choice.
+      if (missing.length > 0 && missing.length < group.length) {
+        for (const key of missing) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: `is required when any of ${group.join(", ")} is set`,
+          });
+        }
+      }
+    }
+
+    if (env.S3_BUCKET_PRIVATE === env.S3_BUCKET_PUBLIC) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["S3_BUCKET_PRIVATE"],
+        message: "must differ from S3_BUCKET_PUBLIC (product files are never public)",
+      });
+    }
+
+    if (env.RESEND_API_KEY === undefined && env.MAILPIT_URL === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["RESEND_API_KEY"],
+        message: "is required (or MAILPIT_URL for local development)",
+      });
+    }
+
     if (env.NODE_ENV !== "production") return;
 
-    const appUrl = new URL(env.APP_URL);
     const databaseUrl = new URL(env.DATABASE_URL);
     // A production build running entirely on this machine (e.g. Lighthouse or E2E against
     // `next start`) gains nothing from TLS on loopback. A real deployment never has a
     // loopback APP_URL, so this cannot relax the checks for a deployed server.
     if (isLoopback(appUrl.hostname) && isLoopback(databaseUrl.hostname)) return;
 
+    // Mailpit only captures mail; a deployed store must really deliver it.
+    if (env.RESEND_API_KEY === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["RESEND_API_KEY"],
+        message: "is required in production",
+      });
+    }
+
     if (appUrl.protocol !== "https:") {
       ctx.addIssue({ code: "custom", path: ["APP_URL"], message: "must use https in production" });
+    }
+
+    if (new URL(env.S3_ENDPOINT).protocol !== "https:") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["S3_ENDPOINT"],
+        message: "must use https in production",
+      });
     }
 
     // The production database is a separate service; never connect to it without TLS.

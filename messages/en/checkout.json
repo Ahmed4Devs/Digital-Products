@@ -1,0 +1,99 @@
+{
+  "cart": {
+    "title": "Your cart",
+    "metadataTitle": "Cart",
+    "empty": "Your cart is empty.",
+    "browse": "Browse products",
+    "remove": "Remove {title}",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "signInNote": "You will sign in or create an account at checkout.",
+    "items": "Items in your cart",
+    "unavailableNote": "Some products are no longer available and were left out."
+  },
+  "page": {
+    "title": "Checkout",
+    "metadataTitle": "Checkout",
+    "summary": "Order summary",
+    "ownedNote": "You already own some products in your cart; they were left out.",
+    "backToCart": "Back to cart"
+  },
+  "form": {
+    "coupon": "Coupon code",
+    "apply": "Apply",
+    "removeCoupon": "Remove coupon",
+    "couponApplied": "Coupon applied.",
+    "gateway": "Payment method",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "tax": "Tax",
+    "total": "Total",
+    "chargedIn": "You will be charged",
+    "pay": "Pay now",
+    "payFree": "Get it free",
+    "processing": "Redirecting to payment…",
+    "free": "Free",
+    "noGateways": "Online payment is not available right now. Please try again later."
+  },
+  "gateways": {
+    "moyasar": {
+      "name": "Card or Apple Pay (Moyasar)",
+      "note": "mada, Visa, Mastercard, American Express, Apple Pay and STC Pay. Charged in Saudi riyals."
+    },
+    "paddle": {
+      "name": "Card (Paddle)",
+      "note": "International cards. Paddle is the merchant of record and handles any tax."
+    },
+    "paypal": {
+      "name": "PayPal",
+      "note": "Pay with your PayPal account. Charged in US dollars."
+    },
+    "fake": {
+      "name": "Test payment",
+      "note": "For automated tests only."
+    }
+  },
+  "result": {
+    "title": "Payment",
+    "metadataTitle": "Payment status",
+    "processing": "We are confirming your payment. This usually takes a few seconds.",
+    "paid": "Payment confirmed. Taking you to your purchases…",
+    "failed": "The payment did not go through. You have not been charged.",
+    "expired": "This order expired before it was paid.",
+    "refunded": "This order was refunded.",
+    "stillWaiting": "Still waiting for the payment provider. You can leave this page: your purchase will appear in My Purchases as soon as it is confirmed.",
+    "library": "Go to My Purchases",
+    "retry": "Back to cart",
+    "order": "Order {number}"
+  },
+  "fake": {
+    "title": "Test payment",
+    "description": "This page stands in for a payment provider in automated tests.",
+    "amount": "Amount",
+    "pay": "Pay",
+    "fail": "Decline"
+  },
+  "paddle": {
+    "title": "Secure payment",
+    "loading": "Opening Paddle's secure checkout…",
+    "failed": "The checkout could not be opened. Please try again or choose another payment method."
+  },
+  "errors": {
+    "invalid": "Please check your details and try again.",
+    "unexpected": "Something went wrong. Please try again.",
+    "signInRequired": "Please sign in to continue.",
+    "verifyRequired": "Please confirm your email address first.",
+    "cartEmpty": "Your cart has nothing left to buy.",
+    "gatewayUnavailable": "This payment method is not available.",
+    "chooseGateway": "Choose a payment method.",
+    "belowMinimum": "This amount is too small for this payment method. Choose another one.",
+    "tooManyOrders": "Too many attempts. Please try again in a few minutes.",
+    "paymentUnavailable": "The payment provider is not responding. Please try again or choose another payment method.",
+    "couponInvalid": "This coupon code is not valid.",
+    "couponExpired": "This coupon has expired.",
+    "couponMinimum": "Your order does not reach this coupon's minimum.",
+    "couponExhausted": "This coupon has been fully used.",
+    "couponAlreadyUsed": "You have already used this coupon.",
+    "tooManyCouponAttempts": "Too many coupon attempts. Please try again in a few minutes."
+  }
+}

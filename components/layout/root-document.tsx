@@ -9,10 +9,17 @@ import { getDirection } from "@/i18n/locale";
 import { cn } from "@/lib/utils";
 
 // Covers both Arabic and Latin, so one self-hosted family serves both locales.
+// Not preloaded: eight files (two scripts × four weights) would compete with the page's
+// own resources on slow connections, and the @font-face unicode ranges let each page
+// fetch only what it renders. `optional` display paints text after at most 100 ms and
+// never swaps it later, so a slow connection keeps the fallback for that view instead of
+// a late layout shift (Arabic glyphs differ most from any fallback); the font is cached
+// for the next page.
 const plexArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
   weight: ["400", "500", "600", "700"],
-  display: "swap",
+  display: "optional",
+  preload: false,
   variable: "--font-sans",
 });
 

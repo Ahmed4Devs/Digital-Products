@@ -1,1 +1,93 @@
-{}
+{
+  "overview": {
+    "metadataTitle": "My account",
+    "title": "My account",
+    "signedInAs": "Signed in as <email></email>",
+    "emailChanged": "Your email address has been changed.",
+    "emailChangeFailed": "This confirmation link is invalid or has expired. Request the change again."
+  },
+  "library": {
+    "title": "My Purchases",
+    "metadataTitle": "My Purchases",
+    "empty": "You have no purchases yet.",
+    "browse": "Browse products",
+    "purchasedOn": "Purchased on {date}",
+    "files": "Files",
+    "download": "Download {name}",
+    "noFiles": "Files for this product are being prepared.",
+    "updated": "Updated",
+    "updatedHint": "A new version is available.",
+    "rateLimited": "Please try again in a minute.",
+    "unavailable": "This download is no longer available."
+  },
+  "orders": {
+    "title": "Orders",
+    "metadataTitle": "Orders",
+    "empty": "You have no orders yet.",
+    "order": "Order {number}",
+    "placedOn": "Placed on {date}",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "tax": "Tax",
+    "total": "Total",
+    "charged": "Charged",
+    "status": {
+      "pending": "Awaiting payment",
+      "paid": "Paid",
+      "failed": "Payment failed",
+      "refunded": "Refunded",
+      "expired": "Expired"
+    },
+    "via": {
+      "moyasar": "Moyasar",
+      "paddle": "Paddle",
+      "paypal": "PayPal",
+      "fake": "Test payment",
+      "free": "Free"
+    },
+    "browse": "Browse products"
+  },
+  "nav": {
+    "label": "Account sections",
+    "overview": "Overview",
+    "library": "My Purchases",
+    "orders": "Orders"
+  },
+  "settings": {
+    "emailTitle": "Email address",
+    "emailDescription": "We send a confirmation link to the new address. Your email changes once you open it.",
+    "newEmail": "New email",
+    "currentPassword": "Current password",
+    "emailSubmit": "Change email",
+    "passwordTitle": "Password",
+    "passwordDescription": "Changing your password signs you out on every other device.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm new password",
+    "passwordSubmit": "Change password",
+    "deleteTitle": "Delete account",
+    "deleteDescription": "Your account, sign-in details and access to your purchases are deleted permanently. Order records are kept for accounting, as the privacy policy explains.",
+    "deleteConfirm": "I understand that I will lose access to everything I bought.",
+    "deleteSubmit": "Delete my account"
+  },
+  "errors": {
+    "invalid": "Please check the highlighted fields.",
+    "unexpected": "Something went wrong. Please try again.",
+    "required": "This field is required.",
+    "invalidEmail": "Enter a valid email address.",
+    "sameEmail": "This is already your email address.",
+    "wrongPassword": "The password is incorrect.",
+    "passwordTooShort": "The password must be at least 8 characters.",
+    "passwordTooLong": "The password is too long.",
+    "passwordCompromised": "This password has appeared in previous data breaches. Choose a different one.",
+    "passwordMismatch": "The passwords do not match.",
+    "confirmRequired": "Confirm that you want to delete your account.",
+    "tooManyRequests": "Too many attempts. Wait 15 minutes and try again.",
+    "notFound": "This account no longer exists."
+  },
+  "notices": {
+    "emailChangeSent": "Check the new address for a confirmation link. Your email stays the same until you open it.",
+    "passwordChanged": "Password changed. Other devices have been signed out.",
+    "accountDeleted": "Your account has been deleted."
+  }
+}

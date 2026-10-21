@@ -11,6 +11,13 @@ export default defineConfig({
   test: {
     environment: "node",
     restoreMocks: true,
+    server: {
+      deps: {
+        // next-intl's ESM build imports `next/navigation` without an extension, which only
+        // resolves when Vite processes the package instead of Node.
+        inline: ["next-intl"],
+      },
+    },
     coverage: {
       provider: "v8",
       include: [
@@ -20,9 +27,19 @@ export default defineConfig({
         "app/**/route.ts",
         "components/shared/**/*.tsx",
         "instrumentation.ts",
+        "proxy.ts",
       ],
-      exclude: ["**/*.d.ts", "lib/utils.ts"],
+      exclude: [
+        "**/*.d.ts",
+        "lib/utils.ts",
+        // 'use cache' wrappers only run inside Next.js; the reads they wrap (data.ts)
+        // are integration-tested and the wrappers are exercised end to end.
+        "features/**/queries.ts",
+      ],
       reporter: ["text", "html", "lcov"],
+      // A floor a little below the current figures (94 % lines), so coverage cannot
+      // quietly erode; raise it as it grows.
+      thresholds: { lines: 90, statements: 88, functions: 90, branches: 78 },
     },
     projects: [
       {

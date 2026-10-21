@@ -2,7 +2,8 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 /**
- * Points the current process (and the processes it spawns) at the separate test database.
+ * Points the current process (and the processes it spawns) at the separate test database
+ * and switches external services to their test doubles.
  * Refuses any database whose name does not end in `_test`, so a typo in .env.local can
  * never let a test run reset development data.
  */
@@ -25,5 +26,10 @@ export function configureTestDatabase(): string {
 
   process.env.DATABASE_URL = testUrl;
   process.env.APP_URL ??= "http://localhost:3000";
+  // Tests never call live services (spec §5.3): local fakes replace Turnstile and the
+  // compromised-password API, and email always goes to Mailpit, even when a developer
+  // has a Resend key in .env.local (empty values count as unset).
+  process.env.TEST_DOUBLES = "on";
+  process.env.RESEND_API_KEY = "";
   return testUrl;
 }

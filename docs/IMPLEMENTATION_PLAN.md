@@ -65,7 +65,7 @@
 
 ## Phase 3 — Database and Authentication → tag `phase-03-auth`
 
-1. Full Prisma schema (Section 9) with `@default(dbgenerated("uuidv7()")) @db.Uuid` IDs, enums, `@@unique`, indexes, money as `Int` minor units, exchange rate as `Decimal`, JSONB payloads/diffs. Better Auth tables generated with its CLI and reconciled into the schema (never edited by hand afterwards). Includes the §17.5 fields: `Order.userId` nullable (`SetNull`) + `customerEmailSnapshot` + `providerTaxMode` / `providerTaxMinor`; `ProductFile.supersededAt`; `Coupon.reservedCount` / `allowMultiplePerCustomer`; `CouponRedemption` with a partial unique index on `(couponId, userId)` for active rows; `DownloadLog` cascading from `Entitlement`.
+1. Full Prisma schema (Section 9) with `@default(dbgenerated("uuidv7()")) @db.Uuid` IDs, enums, `@@unique`, indexes, money as `Int` minor units, exchange rate as `Decimal`, JSONB payloads/diffs. Better Auth tables written from Better Auth's `getAuthTables()` output and validated by its startup schema check (no CLI dependency). Includes the §17.5 fields: `Order.userId` nullable (`SetNull`) + `customerEmailSnapshot` + `providerTaxMode` / `providerTaxMinor`; `ProductFile.supersededAt`; `Coupon.reservedCount` / `allowMultiplePerCustomer`; `CouponRedemption` with a partial unique index on `(couponId, userId)` for active rows; `DownloadLog` cascading from `Entitlement`.
 2. Initial migration; constraint checks (`CHECK` price ≥ 0 etc.) via migration SQL where Prisma can't express them.
 3. Better Auth server (`lib/auth/server.ts`):
    - Prisma adapter; `emailAndPassword` (`requireEmailVerification`, `minPasswordLength: 8`, `revokeSessionsOnPasswordReset`); compromised-password check.
@@ -80,7 +80,7 @@
 5. Data Access Layer (`lib/auth/dal.ts`, `server-only`): `getSession` (cached per request), `requireCustomer`, `requireVerifiedCustomer`, `requireOwner` (→ `notFound()`), structured so TOTP can be added to the owner later.
 6. Turnstile: client widget on sign-up, server-side `siteverify` with Zod-validated response; test keys in dev.
 7. Email: transport interface → Resend (prod) / Mailpit HTTP send API (dev/test); React Email templates (verification, magic link, reset) in both languages with light, dark-mode-safe styling.
-8. Pages: `(auth)/sign-in`, `sign-up`, `forgot-password`, `reset-password`, `verify-email`; `admin/sign-in` (noindex, not linked); return-to-cart redirect handling via validated `callbackURL` (same-origin, locale-aware).
+8. Pages: `(auth)/sign-in`, `sign-up`, `forgot-password`, `reset-password`, `verify-email`; `admin/sign-in` (noindex, not linked); return-to-cart redirect handling via a validated `next` path (same-origin, locale-aware). Auth pages, account and admin live under a second, dynamic root layout `(secure)` so they have no prerendered shell (prepares the nonce routes of §17.5 §2); `proxy.ts` gives real 307/404 status codes optimistically.
 9. Account & admin layouts verify the session on the server; admin returns 404 for non-owners.
 10. Better Auth error codes → translated messages (`auth` namespace).
 11. Owner seed (`prisma/seed.ts`) from env (`OWNER_USERNAME`, `OWNER_EMAIL`, `OWNER_PASSWORD`, `OWNER_FIRST_NAME`, `OWNER_LAST_NAME`) + default `StoreSetting`; idempotent.
@@ -94,7 +94,7 @@
 
 1. `features/products` & `features/categories`: cached queries (`'use cache'`, `cacheTag('products' | 'product:{id}' | 'categories' | 'settings')`, `cacheLife`), select only needed fields.
 2. Bilingual field fallback helper (`ar` empty → `en` and vice versa).
-3. Home (featured, newest, categories), `/products` (search, category filter, sort, pagination; search params Zod-validated; static shell + dynamic results in `Suspense`), `/products/[slug]` and `/categories/[slug]` prerendered per locale with `generateStaticParams` + `ensureStatic`.
+3. Home (featured, newest, categories), `/products` (search, category filter, sort, pagination; search params Zod-validated; static shell + dynamic results in `Suspense`), `/products/[slug]` and `/categories/[slug]` prerendered per locale with `generateStaticParams` + `ensureStatic`. `ensureStatic = "navigation"` forbids request-time data even inside `Suspense`, so personal header UI (account link, later the cart count) is resolved in the browser. E2E data is seeded before `next build`.
 4. Shared components: `PriceDisplay` (USD primary, SAR beneath), `ProductCard`, empty states.
 5. Product rich-text rendering through the allowlist sanitizer (render-side pass).
 6. `next/image` with AVIF/WebP, `remotePatterns` for the public images bucket only; `priority` on the LCP image.
@@ -159,7 +159,7 @@ Overview metrics; orders (filters, details, resend receipt, refund, grant/revoke
 
 Two-policy CSP (§17.5 §2): per-request nonce + `'strict-dynamic'` on admin/account/checkout/auth routes (fully dynamic, only the third-party origins each route needs), static `next.config` policy without third-party script origins everywhere else; tests proving every script on protected routes carries the nonce and catalog routes still pass `ensureStatic`; SRI/hash-based CSP decision recorded (Turbopack support); plus HSTS, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`; rate-limit review; full E2E matrix + axe; Lighthouse in both locales/themes; bundle analyzer; translated 404/error pages; legal placeholder pages; `pnpm audit`; `docs/SECURITY.md` (threat model, checklist, OWASP Top 10 mapping); coverage targets enforced (≥ 90 % critical modules, ≥ 70 % overall).
 
-## Phase 10 — Release Preparation (no deployment) → tag `v1.0.0-rc.1`
+## Phase 10 — Release Preparation (no deployment) → tag `v1.0.0`
 
 Multi-stage non-root `Dockerfile`; production env template; health endpoint hardening; `docs/DEPLOYMENT.md` (VPS, Coolify/Dokploy, independent PostgreSQL 18 requirements, R2, Resend domain, `prisma migrate deploy`, backups, the daily `maintenance:run` schedule inside the app container); go-live checklist.
 

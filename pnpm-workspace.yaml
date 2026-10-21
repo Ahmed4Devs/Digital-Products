@@ -13,3 +13,6 @@ allowBuilds:
   simple-git-hooks: false
   # Only verifies that the prebuilt native binding (installed via optionalDependencies) exists.
   unrs-resolver: false
+  # Used by tsx (CLI scripts) and react-email's preview CLI. The platform binary comes
+  # from optionalDependencies, so its install-time check is not needed.
+  esbuild: false

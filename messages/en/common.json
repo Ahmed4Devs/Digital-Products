@@ -8,7 +8,10 @@
   },
   "nav": {
     "primary": "Main navigation",
-    "home": "Home"
+    "home": "Home",
+    "signIn": "Sign in",
+    "account": "My account",
+    "products": "Products"
   },
   "theme": {
     "label": "Change theme",
@@ -25,6 +28,49 @@
   },
   "footer": {
     "copyright": "© {date, date, year} {storeName}. All rights reserved.",
-    "twemoji": "Emoji graphics by <twemoji>Twemoji</twemoji>, licensed under <license>CC BY 4.0</license>."
+    "twemoji": "Emoji graphics by <twemoji>Twemoji</twemoji>, licensed under <license>CC BY 4.0</license>.",
+    "legal": "Store information",
+    "links": {
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "refund-policy": "Refund policy",
+      "about": "About",
+      "contact": "Contact"
+    }
+  },
+  "cart": {
+    "link": "Cart",
+    "addToCart": "Add to cart",
+    "inCart": "In your cart",
+    "viewCart": "View cart",
+    "getIt": "Get it free",
+    "added": "Added to your cart.",
+    "owned": "You already own this product.",
+    "errors": {
+      "unavailable": "This product is not available.",
+      "cartFull": "Your cart is full. Check out or remove an item first.",
+      "signInRequired": "Please sign in to continue.",
+      "verifyRequired": "Please confirm your email address first.",
+      "unexpected": "Something went wrong. Please try again.",
+      "invalid": "Something went wrong. Please try again.",
+      "tooManyOrders": "Too many attempts. Please try again in a few minutes.",
+      "cartEmpty": "You already own this product."
+    },
+    "itemCount": "items: {count, number, integer}"
+  },
+  "notFound": {
+    "metadataTitle": "Page not found",
+    "code": "Error 404",
+    "title": "We couldn't find this page",
+    "description": "The link may be broken, or the page may have been moved or removed.",
+    "home": "Go to the home page",
+    "products": "Browse products"
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "description": "This page could not be shown. Please try again in a moment.",
+    "retry": "Try again",
+    "home": "Go to the home page",
+    "reference": "Reference: {digest}"
   }
 }

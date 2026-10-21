@@ -1,1 +1,55 @@
-{}
+{
+  "common": {
+    "linkFallback": "If the button doesn't work, copy and paste this link into your browser:",
+    "ignore": "If you didn't request this, you can safely ignore this email.",
+    "footer": "This email was sent by {storeName}."
+  },
+  "verifyEmail": {
+    "subject": "Confirm your email for {storeName}",
+    "preview": "One step to activate your account.",
+    "heading": "Confirm your email",
+    "body": "Thanks for signing up. Select the button below to confirm your email address and activate your account.",
+    "button": "Confirm email",
+    "expiry": "This link expires in one hour."
+  },
+  "magicLink": {
+    "subject": "Your sign-in link for {storeName}",
+    "preview": "Sign in with one click.",
+    "heading": "Your sign-in link",
+    "body": "Select the button below to sign in to your account. The link can be used only once.",
+    "button": "Sign in",
+    "expiry": "This link expires in 10 minutes."
+  },
+  "resetPassword": {
+    "subject": "Reset your {storeName} password",
+    "preview": "Choose a new password for your account.",
+    "heading": "Reset your password",
+    "body": "We received a request to reset the password for your account. Select the button below to choose a new password. You will be signed out on all other devices.",
+    "button": "Reset password",
+    "expiry": "This link expires in one hour."
+  },
+  "receipt": {
+    "subject": "Your receipt for order {number} at {storeName}",
+    "preview": "Your products are ready in My Purchases.",
+    "heading": "Thank you for your purchase",
+    "body": "Your payment was received and your products are ready in My Purchases.",
+    "order": "Order {number}",
+    "date": "Date: {date}",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "tax": "Tax",
+    "total": "Total",
+    "charged": "Charged",
+    "button": "Open My Purchases",
+    "security": "For your security, downloads are available only from your account."
+  },
+  "changeEmail": {
+    "subject": "Confirm your new email for {storeName}",
+    "preview": "Confirm the new address for your account.",
+    "heading": "Confirm your new email",
+    "body": "You asked to use this address for your account. Select the button below to confirm it; until then your account keeps its current email.",
+    "button": "Confirm new email",
+    "expiry": "This link expires in one hour."
+  }
+}

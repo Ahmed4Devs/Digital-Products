@@ -8,7 +8,10 @@
   },
   "nav": {
     "primary": "التنقل الرئيسي",
-    "home": "الرئيسية"
+    "home": "الرئيسية",
+    "signIn": "تسجيل الدخول",
+    "account": "حسابي",
+    "products": "المنتجات"
   },
   "theme": {
     "label": "تغيير المظهر",
@@ -25,6 +28,49 @@
   },
   "footer": {
     "copyright": "© {date, date, year} {storeName}. جميع الحقوق محفوظة.",
-    "twemoji": "رسومات الإيموجي من <twemoji>Twemoji</twemoji>، مرخّصة بموجب <license>CC BY 4.0</license>."
+    "twemoji": "رسومات الإيموجي من <twemoji>Twemoji</twemoji>، مرخّصة بموجب <license>CC BY 4.0</license>.",
+    "legal": "معلومات المتجر",
+    "links": {
+      "terms": "الشروط",
+      "privacy": "الخصوصية",
+      "refund-policy": "سياسة الاسترداد",
+      "about": "من نحن",
+      "contact": "تواصل معنا"
+    }
+  },
+  "cart": {
+    "link": "السلة",
+    "addToCart": "أضف إلى السلة",
+    "inCart": "في سلتك",
+    "viewCart": "عرض السلة",
+    "getIt": "احصل عليه مجانًا",
+    "added": "أُضيف إلى سلتك.",
+    "owned": "أنت تملك هذا المنتج بالفعل.",
+    "errors": {
+      "unavailable": "هذا المنتج غير متاح.",
+      "cartFull": "سلتك ممتلئة. أكمل الشراء أو احذف منتجًا أولًا.",
+      "signInRequired": "يرجى تسجيل الدخول للمتابعة.",
+      "verifyRequired": "يرجى تأكيد بريدك الإلكتروني أولًا.",
+      "unexpected": "حدث خطأ ما. حاول مرة أخرى.",
+      "invalid": "حدث خطأ ما. حاول مرة أخرى.",
+      "tooManyOrders": "محاولات كثيرة. حاول مرة أخرى بعد بضع دقائق.",
+      "cartEmpty": "أنت تملك هذا المنتج بالفعل."
+    },
+    "itemCount": "عدد المنتجات: {count, number, integer}"
+  },
+  "notFound": {
+    "metadataTitle": "الصفحة غير موجودة",
+    "code": "خطأ 404",
+    "title": "لم نعثر على هذه الصفحة",
+    "description": "ربما يكون الرابط غير صحيح، أو نُقلت الصفحة أو حُذفت.",
+    "home": "الذهاب إلى الصفحة الرئيسية",
+    "products": "تصفّح المنتجات"
+  },
+  "errorPage": {
+    "title": "حدث خطأ ما",
+    "description": "تعذّر عرض هذه الصفحة. حاول مرة أخرى بعد قليل.",
+    "retry": "حاول مرة أخرى",
+    "home": "الذهاب إلى الصفحة الرئيسية",
+    "reference": "المرجع: {digest}"
   }
 }

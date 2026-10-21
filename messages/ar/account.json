@@ -1,1 +1,93 @@
-{}
+{
+  "overview": {
+    "metadataTitle": "حسابي",
+    "title": "حسابي",
+    "signedInAs": "مسجّل الدخول بالبريد <email></email>",
+    "emailChanged": "تغيّر بريدك الإلكتروني.",
+    "emailChangeFailed": "رابط التأكيد غير صالح أو منتهي الصلاحية. اطلب التغيير مرة أخرى."
+  },
+  "library": {
+    "title": "مشترياتي",
+    "metadataTitle": "مشترياتي",
+    "empty": "لا توجد مشتريات بعد.",
+    "browse": "تصفح المنتجات",
+    "purchasedOn": "تاريخ الشراء: {date}",
+    "files": "الملفات",
+    "download": "تنزيل {name}",
+    "noFiles": "ملفات هذا المنتج قيد التجهيز.",
+    "updated": "محدَّث",
+    "updatedHint": "يتوفر إصدار جديد.",
+    "rateLimited": "يرجى المحاولة مرة أخرى بعد دقيقة.",
+    "unavailable": "هذا التنزيل لم يعد متاحًا."
+  },
+  "orders": {
+    "title": "الطلبات",
+    "metadataTitle": "الطلبات",
+    "empty": "لا توجد طلبات بعد.",
+    "order": "الطلب {number}",
+    "placedOn": "تاريخ الطلب: {date}",
+    "items": "المنتجات",
+    "subtotal": "المجموع الفرعي",
+    "discount": "الخصم",
+    "tax": "الضريبة",
+    "total": "الإجمالي",
+    "charged": "المبلغ المدفوع",
+    "status": {
+      "pending": "بانتظار الدفع",
+      "paid": "مدفوع",
+      "failed": "فشل الدفع",
+      "refunded": "مسترد",
+      "expired": "منتهي الصلاحية"
+    },
+    "via": {
+      "moyasar": "ميسر",
+      "paddle": "Paddle",
+      "paypal": "PayPal",
+      "fake": "دفع تجريبي",
+      "free": "مجاني"
+    },
+    "browse": "تصفح المنتجات"
+  },
+  "nav": {
+    "label": "أقسام الحساب",
+    "overview": "نظرة عامة",
+    "library": "مشترياتي",
+    "orders": "الطلبات"
+  },
+  "settings": {
+    "emailTitle": "البريد الإلكتروني",
+    "emailDescription": "نرسل رابط تأكيد إلى العنوان الجديد، ويتغيّر بريدك بعد فتحه.",
+    "newEmail": "البريد الجديد",
+    "currentPassword": "كلمة المرور الحالية",
+    "emailSubmit": "تغيير البريد",
+    "passwordTitle": "كلمة المرور",
+    "passwordDescription": "تغيير كلمة المرور يُخرجك من كل الأجهزة الأخرى.",
+    "newPassword": "كلمة المرور الجديدة",
+    "confirmPassword": "تأكيد كلمة المرور الجديدة",
+    "passwordSubmit": "تغيير كلمة المرور",
+    "deleteTitle": "حذف الحساب",
+    "deleteDescription": "يُحذف حسابك وبيانات الدخول والوصول إلى مشترياتك نهائيًا. تبقى سجلات الطلبات لأغراض المحاسبة كما توضح سياسة الخصوصية.",
+    "deleteConfirm": "أفهم أنني سأفقد الوصول إلى كل ما اشتريته.",
+    "deleteSubmit": "حذف حسابي"
+  },
+  "errors": {
+    "invalid": "يُرجى مراجعة الحقول المميزة.",
+    "unexpected": "حدث خطأ ما. حاول مرة أخرى.",
+    "required": "هذا الحقل مطلوب.",
+    "invalidEmail": "أدخل بريدًا إلكترونيًا صحيحًا.",
+    "sameEmail": "هذا هو بريدك الحالي.",
+    "wrongPassword": "كلمة المرور غير صحيحة.",
+    "passwordTooShort": "يجب ألا تقل كلمة المرور عن 8 أحرف.",
+    "passwordTooLong": "كلمة المرور طويلة جدًا.",
+    "passwordCompromised": "ظهرت كلمة المرور هذه في تسريبات بيانات سابقة. اختر كلمة أخرى.",
+    "passwordMismatch": "كلمتا المرور غير متطابقتين.",
+    "confirmRequired": "أكّد أنك تريد حذف حسابك.",
+    "tooManyRequests": "محاولات كثيرة. انتظر 15 دقيقة ثم حاول مجددًا.",
+    "notFound": "هذا الحساب لم يعد موجودًا."
+  },
+  "notices": {
+    "emailChangeSent": "افتح رابط التأكيد المرسل إلى العنوان الجديد. يبقى بريدك كما هو حتى تفتحه.",
+    "passwordChanged": "تغيّرت كلمة المرور وسُجّل خروج الأجهزة الأخرى.",
+    "accountDeleted": "حُذف حسابك."
+  }
+}
