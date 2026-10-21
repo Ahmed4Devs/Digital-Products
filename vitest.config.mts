@@ -11,6 +11,13 @@ export default defineConfig({
   test: {
     environment: "node",
     restoreMocks: true,
+    server: {
+      deps: {
+        // next-intl's ESM build imports `next/navigation` without an extension, which only
+        // resolves when Vite processes the package instead of Node.
+        inline: ["next-intl"],
+      },
+    },
     coverage: {
       provider: "v8",
       include: [
@@ -20,6 +27,7 @@ export default defineConfig({
         "app/**/route.ts",
         "components/shared/**/*.tsx",
         "instrumentation.ts",
+        "proxy.ts",
       ],
       exclude: ["**/*.d.ts", "lib/utils.ts"],
       reporter: ["text", "html", "lcov"],
