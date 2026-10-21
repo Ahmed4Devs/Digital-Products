@@ -81,3 +81,45 @@ export function toDecimalString(amountMinor: number, currency: Currency): string
   const fraction = String(amountMinor % unit).padStart(String(unit).length - 1, "0");
   return `${whole}.${fraction}`;
 }
+
+// ── Owner input ────────────────────────────────────────────────────────────────────
+
+const ARABIC_INDIC_DIGITS = /[٠-٩۰-۹]/g;
+const AMOUNT_PATTERN = /^(\d{1,9})(?:\.(\d{1,2}))?$/;
+
+/** Latin digits and "." for amounts typed on an Arabic keyboard ("١٢٫٥٠" → "12.50"). */
+export function normalizeDecimalInput(text: string): string {
+  return text
+    .trim()
+    .replace(ARABIC_INDIC_DIGITS, (digit) => {
+      const code = digit.charCodeAt(0);
+      return String(code >= 0x06f0 ? code - 0x06f0 : code - 0x0660);
+    })
+    .replace(/[٫,]/g, ".");
+}
+
+/**
+ * Parses an amount typed in major units ("12", "12.5", "12.50") into minor units without
+ * floating-point arithmetic. Returns null for anything else, including negatives,
+ * thousands separators and more than two decimals.
+ */
+export function parseMajorUnits(text: string, currency: Currency): number | null {
+  const match = AMOUNT_PATTERN.exec(normalizeDecimalInput(text));
+  if (!match) return null;
+  const [, whole = "0", fraction = ""] = match;
+  const unit = MINOR_UNITS[currency];
+  const amount = Number(whole) * unit + Number(fraction.padEnd(2, "0"));
+  return Number.isSafeInteger(amount) ? amount : null;
+}
+
+/** Normalized exchange rate with six decimals ("3.75" → "3.750000"), or null if invalid. */
+export function normalizeRate(text: string): string | null {
+  try {
+    const scaled = parseRate(normalizeDecimalInput(text));
+    const whole = scaled / RATE_SCALE;
+    const fraction = String(scaled % RATE_SCALE).padStart(6, "0");
+    return `${whole}.${fraction}`;
+  } catch {
+    return null;
+  }
+}

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   MoneyError,
+  normalizeDecimalInput,
+  normalizeRate,
+  parseMajorUnits,
   parseRate,
   sarPriceHalalas,
   toDecimalString,
@@ -77,5 +80,45 @@ describe("toDecimalString", () => {
     expect(toDecimalString(1_200, "USD")).toBe("12.00");
     expect(toDecimalString(5, "SAR")).toBe("0.05");
     expect(toDecimalString(0, "USD")).toBe("0.00");
+  });
+});
+
+describe("owner input", () => {
+  it("parses amounts in major units without floating point", () => {
+    expect(parseMajorUnits("12", "USD")).toBe(1200);
+    expect(parseMajorUnits("12.5", "USD")).toBe(1250);
+    expect(parseMajorUnits(" 12.50 ", "USD")).toBe(1250);
+    expect(parseMajorUnits("0.29", "USD")).toBe(29);
+    expect(parseMajorUnits("0", "SAR")).toBe(0);
+    expect(parseMajorUnits("١٢٫٥٠", "SAR")).toBe(1250);
+    expect(parseMajorUnits("۱۲,۵", "SAR")).toBe(1250);
+    for (const bad of [
+      "",
+      "-1",
+      "1.234",
+      "1,000.00",
+      "1e3",
+      "abc",
+      ".5",
+      "5.",
+      "NaN",
+      "Infinity",
+    ]) {
+      expect(parseMajorUnits(bad, "USD"), bad).toBeNull();
+    }
+  });
+
+  it("normalizes exchange rates to six decimals", () => {
+    expect(normalizeRate("3.75")).toBe("3.750000");
+    expect(normalizeRate("٣٫٧٥")).toBe("3.750000");
+    expect(normalizeRate("1")).toBe("1.000000");
+    expect(normalizeRate("0.000001")).toBe("0.000001");
+    for (const bad of ["0", "0.0000001", "-3.75", "3.75x", ""]) {
+      expect(normalizeRate(bad), bad).toBeNull();
+    }
+  });
+
+  it("normalizes Arabic digits and separators", () => {
+    expect(normalizeDecimalInput(" ٠١٢٣٤٥٦٧٨٩٫ ")).toBe("0123456789.");
   });
 });
