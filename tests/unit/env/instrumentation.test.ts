@@ -4,6 +4,10 @@ import { register } from "@/instrumentation";
 const validEnv = {
   APP_URL: "http://localhost:3000",
   DATABASE_URL: "postgresql://app:secret@127.0.0.1:5462/app",
+  BETTER_AUTH_SECRET: "instrumentation-secret-long-enough-0001",
+  MAIL_FROM: "store@example.com",
+  MAILPIT_URL: "http://127.0.0.1:8032",
+  TEST_DOUBLES: "on",
 };
 
 function stubEnv(values: Record<string, string | undefined>) {

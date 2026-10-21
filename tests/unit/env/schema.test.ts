@@ -5,12 +5,29 @@ const devEnv = {
   NODE_ENV: "development",
   APP_URL: "http://localhost:3000",
   DATABASE_URL: "postgresql://app:dev-secret@127.0.0.1:5462/app",
+  BETTER_AUTH_SECRET: "dev-auth-secret-that-is-long-enough-123",
+  MAIL_FROM: "Digital Store <no-reply@example.com>",
+  MAILPIT_URL: "http://127.0.0.1:8032",
+  TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
+  TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
 };
 
 const prodEnv = {
   NODE_ENV: "production",
   APP_URL: "https://store.example.com",
   DATABASE_URL: "postgresql://app:prod-secret@db.example.com:5432/app?sslmode=verify-full",
+  BETTER_AUTH_SECRET: "prod-auth-secret-that-is-long-enough-456",
+  MAIL_FROM: "Digital Store <no-reply@store.example.com>",
+  RESEND_API_KEY: "re_live_key",
+  TURNSTILE_SITE_KEY: "0x4AAAAAAA",
+  TURNSTILE_SECRET_KEY: "0x4AAAAAAA-secret",
+};
+
+const defaults = {
+  DATABASE_POOL_MAX: 10,
+  AUTH_IP_HEADERS: ["x-forwarded-for"],
+  AUTH_TRUSTED_PROXIES: [],
+  TEST_DOUBLES: "off",
 };
 
 function errorOf(source: Record<string, string | undefined>): string {
@@ -26,7 +43,7 @@ function errorOf(source: Record<string, string | undefined>): string {
 describe("parseServerEnv", () => {
   it("accepts a valid development environment and applies defaults", () => {
     const env = parseServerEnv(devEnv);
-    expect(env).toEqual({ ...devEnv, DATABASE_POOL_MAX: 10 });
+    expect(env).toEqual({ ...devEnv, ...defaults });
   });
 
   it("defaults NODE_ENV to development", () => {
@@ -49,6 +66,8 @@ describe("parseServerEnv", () => {
     const message = errorOf({ NODE_ENV: "development" });
     expect(message).toContain("APP_URL: is required");
     expect(message).toContain("DATABASE_URL: is required");
+    expect(message).toContain("BETTER_AUTH_SECRET: is required");
+    expect(message).toContain("MAIL_FROM: is required");
   });
 
   it("rejects malformed URLs and wrong protocols", () => {
@@ -120,6 +139,54 @@ describe("production rules", () => {
     const message = errorOf({ ...mixed, DATABASE_URL: prodEnv.DATABASE_URL.split("?")[0] });
     expect(message).toContain("APP_URL: must use https in production");
     expect(message).toContain("DATABASE_URL: must set sslmode");
+  });
+});
+
+describe("authentication, email and bot protection", () => {
+  it("requires a long auth secret", () => {
+    expect(errorOf({ ...devEnv, BETTER_AUTH_SECRET: "too-short" })).toContain(
+      "BETTER_AUTH_SECRET: must be at least 32 characters",
+    );
+  });
+
+  it("parses comma-separated IP header and trusted proxy lists", () => {
+    const env = parseServerEnv({
+      ...devEnv,
+      AUTH_IP_HEADERS: "cf-connecting-ip, x-forwarded-for",
+      AUTH_TRUSTED_PROXIES: "10.0.0.0/8,  172.16.0.0/12 ,",
+    });
+    expect(env.AUTH_IP_HEADERS).toEqual(["cf-connecting-ip", "x-forwarded-for"]);
+    expect(env.AUTH_TRUSTED_PROXIES).toEqual(["10.0.0.0/8", "172.16.0.0/12"]);
+  });
+
+  it("needs an email transport", () => {
+    const { MAILPIT_URL: _omit, ...rest } = devEnv;
+    expect(errorOf(rest)).toContain("RESEND_API_KEY: is required (or MAILPIT_URL");
+  });
+
+  it("requires Resend in production even when Mailpit is configured", () => {
+    const { RESEND_API_KEY: _omit, ...rest } = prodEnv;
+    expect(errorOf({ ...rest, MAILPIT_URL: "http://127.0.0.1:8032" })).toContain(
+      "RESEND_API_KEY: is required in production",
+    );
+  });
+
+  it("requires Turnstile keys unless test doubles are on", () => {
+    const { TURNSTILE_SITE_KEY: _site, TURNSTILE_SECRET_KEY: _secret, ...rest } = devEnv;
+    const message = errorOf(rest);
+    expect(message).toContain("TURNSTILE_SITE_KEY: is required");
+    expect(message).toContain("TURNSTILE_SECRET_KEY: is required");
+    expect(parseServerEnv({ ...rest, TEST_DOUBLES: "on" }).TEST_DOUBLES).toBe("on");
+  });
+
+  it("refuses test doubles unless the app runs on loopback", () => {
+    expect(errorOf({ ...prodEnv, TEST_DOUBLES: "on" })).toContain(
+      "TEST_DOUBLES: can only be enabled when APP_URL is a loopback address",
+    );
+    expect(
+      errorOf({ ...devEnv, APP_URL: "http://192.168.1.20:3000", TEST_DOUBLES: "on" }),
+    ).toContain("TEST_DOUBLES");
+    expect(errorOf({ ...devEnv, TEST_DOUBLES: "yes" })).toContain("TEST_DOUBLES");
   });
 });
 
