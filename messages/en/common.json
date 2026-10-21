@@ -8,7 +8,10 @@
   },
   "nav": {
     "primary": "Main navigation",
-    "home": "Home"
+    "home": "Home",
+    "signIn": "Sign in",
+    "account": "My account",
+    "products": "Products"
   },
   "theme": {
     "label": "Change theme",

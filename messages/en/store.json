@@ -2,6 +2,55 @@
   "home": {
     "metadataTitle": "Home",
     "title": "Digital products, ready to download ✨",
-    "tagline": "Buy once and download your files from My Purchases anytime 📦"
+    "tagline": "Buy once and download your files from My Purchases anytime 📦",
+    "browseAll": "Browse all products",
+    "featuredTitle": "Featured",
+    "newestTitle": "New arrivals",
+    "categoriesTitle": "Categories",
+    "viewAll": "View all"
+  },
+  "products": {
+    "metadataTitle": "Products",
+    "metadataDescription": "Browse every digital product and search by category and price.",
+    "title": "All products",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Search for a product…",
+    "categoryLabel": "Category",
+    "allCategories": "All categories",
+    "sortLabel": "Sort by",
+    "sort": {
+      "newest": "Newest",
+      "price-asc": "Price: low to high",
+      "price-desc": "Price: high to low"
+    },
+    "submit": "Apply",
+    "resultCount": "Results: {count, number, integer}",
+    "noResults": "No products match.",
+    "noResultsHint": "Try other words or remove the filters.",
+    "clearFilters": "Clear filters",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageStatus": "Page {page, number, integer} of {pageCount, number, integer}"
+  },
+  "category": {
+    "metadataDescription": "Digital products in {name}.",
+    "productCount": "Products: {count, number, integer}",
+    "empty": "There are no products in this category yet.",
+    "viewAllInCategory": "View every product in this category"
+  },
+  "product": {
+    "breadcrumb": "Breadcrumb",
+    "home": "Home",
+    "gallery": "Product images",
+    "description": "Description",
+    "purchaseSoon": "Purchasing opens soon.",
+    "digitalDelivery": "Digital product: it appears in My Purchases right after payment, ready to download anytime."
+  },
+  "price": {
+    "free": "Free",
+    "label": "Price",
+    "originalPrice": "Original price",
+    "sarEquivalent": "Equivalent in Saudi riyals"
   }
 }

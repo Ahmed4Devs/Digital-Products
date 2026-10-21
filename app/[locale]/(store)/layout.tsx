@@ -18,7 +18,7 @@ export function generateStaticParams() {
 }
 
 export function generateMetadata(): Promise<Metadata> {
-  return rootMetadata();
+  return rootMetadata({ indexable: true });
 }
 
 export default async function StoreRootLayout({ children, params }: LayoutProps<"/[locale]">) {

@@ -20,7 +20,7 @@ export function generateStaticParams() {
 }
 
 export function generateMetadata(): Promise<Metadata> {
-  return rootMetadata();
+  return rootMetadata({ indexable: false });
 }
 
 export default async function SecureRootLayout({ children, params }: LayoutProps<"/[locale]">) {

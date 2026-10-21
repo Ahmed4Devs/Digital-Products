@@ -2,6 +2,55 @@
   "home": {
     "metadataTitle": "الرئيسية",
     "title": "منتجات رقمية جاهزة للتحميل ✨",
-    "tagline": "اشترِ مرة واحدة وحمّل ملفاتك من صفحة «مشترياتي» في أي وقت 📦"
+    "tagline": "اشترِ مرة واحدة وحمّل ملفاتك من صفحة «مشترياتي» في أي وقت 📦",
+    "browseAll": "تصفّح كل المنتجات",
+    "featuredTitle": "منتجات مختارة",
+    "newestTitle": "وصل حديثًا",
+    "categoriesTitle": "الأقسام",
+    "viewAll": "عرض الكل"
+  },
+  "products": {
+    "metadataTitle": "المنتجات",
+    "metadataDescription": "تصفّح كل المنتجات الرقمية وابحث فيها حسب القسم والسعر.",
+    "title": "كل المنتجات",
+    "searchLabel": "بحث",
+    "searchPlaceholder": "ابحث عن منتج…",
+    "categoryLabel": "القسم",
+    "allCategories": "كل الأقسام",
+    "sortLabel": "الترتيب",
+    "sort": {
+      "newest": "الأحدث",
+      "price-asc": "السعر: من الأقل",
+      "price-desc": "السعر: من الأعلى"
+    },
+    "submit": "تطبيق",
+    "resultCount": "عدد النتائج: {count, number, integer}",
+    "noResults": "لا توجد منتجات مطابقة.",
+    "noResultsHint": "جرّب كلمات أخرى أو أزل عوامل التصفية.",
+    "clearFilters": "إزالة عوامل التصفية",
+    "pagination": "ترقيم الصفحات",
+    "previous": "السابق",
+    "next": "التالي",
+    "pageStatus": "صفحة {page, number, integer} من {pageCount, number, integer}"
+  },
+  "category": {
+    "metadataDescription": "منتجات قسم {name} الرقمية.",
+    "productCount": "عدد المنتجات: {count, number, integer}",
+    "empty": "لا توجد منتجات في هذا القسم بعد.",
+    "viewAllInCategory": "عرض كل منتجات القسم"
+  },
+  "product": {
+    "breadcrumb": "مسار التنقل",
+    "home": "الرئيسية",
+    "gallery": "صور المنتج",
+    "description": "الوصف",
+    "purchaseSoon": "الشراء من المتجر متاح قريبًا.",
+    "digitalDelivery": "منتج رقمي: يظهر في «مشترياتي» فور الدفع لتحمّله في أي وقت."
+  },
+  "price": {
+    "free": "مجاني",
+    "label": "السعر",
+    "originalPrice": "السعر قبل الخصم",
+    "sarEquivalent": "ما يعادل بالريال السعودي"
   }
 }
