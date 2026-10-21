@@ -3,8 +3,7 @@
     "metadataTitle": "My account",
     "title": "My account",
     "signedInAs": "Signed in as <email></email>",
-    "comingSoon": "Your purchases, orders and account settings will appear here.",
-    "libraryLink": "My Purchases"
+    "comingSoon": "Your purchases and orders are in the sections above; account settings arrive soon."
   },
   "library": {
     "title": "My Purchases",
@@ -12,6 +11,46 @@
     "empty": "You have no purchases yet.",
     "browse": "Browse products",
     "purchasedOn": "Purchased on {date}",
-    "downloadsSoon": "Downloads open in the next update."
+    "files": "Files",
+    "download": "Download {name}",
+    "noFiles": "Files for this product are being prepared.",
+    "updated": "Updated",
+    "updatedHint": "A new version is available.",
+    "rateLimited": "Please try again in a minute.",
+    "unavailable": "This download is no longer available."
+  },
+  "orders": {
+    "title": "Orders",
+    "metadataTitle": "Orders",
+    "empty": "You have no orders yet.",
+    "order": "Order {number}",
+    "placedOn": "Placed on {date}",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "tax": "Tax",
+    "total": "Total",
+    "charged": "Charged",
+    "status": {
+      "pending": "Awaiting payment",
+      "paid": "Paid",
+      "failed": "Payment failed",
+      "refunded": "Refunded",
+      "expired": "Expired"
+    },
+    "via": {
+      "moyasar": "Moyasar",
+      "paddle": "Paddle",
+      "paypal": "PayPal",
+      "fake": "Test payment",
+      "free": "Free"
+    },
+    "browse": "Browse products"
+  },
+  "nav": {
+    "label": "Account sections",
+    "overview": "Overview",
+    "library": "My Purchases",
+    "orders": "Orders"
   }
 }

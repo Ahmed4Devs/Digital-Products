@@ -1,3 +1,4 @@
+import { AccountNav } from "@/components/account/account-nav";
 import { IntlNamespaces } from "@/components/layout/intl-namespaces";
 import { SiteShell } from "@/components/layout/site-shell";
 import { requireCustomer } from "@/lib/auth/dal";
@@ -11,7 +12,10 @@ export default async function AccountLayout({ children }: LayoutProps<"/[locale]
 
   return (
     <SiteShell>
-      <IntlNamespaces namespaces={["auth", "account"]}>{children}</IntlNamespaces>
+      <IntlNamespaces namespaces={["auth", "account"]}>
+        <AccountNav />
+        {children}
+      </IntlNamespaces>
     </SiteShell>
   );
 }

@@ -3,8 +3,7 @@
     "metadataTitle": "حسابي",
     "title": "حسابي",
     "signedInAs": "مسجّل الدخول بالبريد <email></email>",
-    "comingSoon": "ستظهر هنا مشترياتك وطلباتك وإعدادات حسابك.",
-    "libraryLink": "مشترياتي"
+    "comingSoon": "مشترياتك وطلباتك في الأقسام أعلاه، وإعدادات الحساب قريبًا."
   },
   "library": {
     "title": "مشترياتي",
@@ -12,6 +11,46 @@
     "empty": "لا توجد مشتريات بعد.",
     "browse": "تصفح المنتجات",
     "purchasedOn": "تاريخ الشراء: {date}",
-    "downloadsSoon": "تتوفر التنزيلات في التحديث القادم."
+    "files": "الملفات",
+    "download": "تنزيل {name}",
+    "noFiles": "ملفات هذا المنتج قيد التجهيز.",
+    "updated": "محدَّث",
+    "updatedHint": "يتوفر إصدار جديد.",
+    "rateLimited": "يرجى المحاولة مرة أخرى بعد دقيقة.",
+    "unavailable": "هذا التنزيل لم يعد متاحًا."
+  },
+  "orders": {
+    "title": "الطلبات",
+    "metadataTitle": "الطلبات",
+    "empty": "لا توجد طلبات بعد.",
+    "order": "الطلب {number}",
+    "placedOn": "تاريخ الطلب: {date}",
+    "items": "المنتجات",
+    "subtotal": "المجموع الفرعي",
+    "discount": "الخصم",
+    "tax": "الضريبة",
+    "total": "الإجمالي",
+    "charged": "المبلغ المدفوع",
+    "status": {
+      "pending": "بانتظار الدفع",
+      "paid": "مدفوع",
+      "failed": "فشل الدفع",
+      "refunded": "مسترد",
+      "expired": "منتهي الصلاحية"
+    },
+    "via": {
+      "moyasar": "ميسر",
+      "paddle": "Paddle",
+      "paypal": "PayPal",
+      "fake": "دفع تجريبي",
+      "free": "مجاني"
+    },
+    "browse": "تصفح المنتجات"
+  },
+  "nav": {
+    "label": "أقسام الحساب",
+    "overview": "نظرة عامة",
+    "library": "مشترياتي",
+    "orders": "الطلبات"
   }
 }
