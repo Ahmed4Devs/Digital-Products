@@ -174,6 +174,11 @@ test("settings: the store name and logo show on the storefront at once", async (
     await editor.pressSequentially("We keep order records for accounting.");
     await panel.getByRole("button", { name: "Save page" }).click();
     await expect(panel.getByText("Settings saved.")).toBeVisible();
+    // The prerendered legal page shows the owner's text on the next request.
+    await page.goto("/en/legal/privacy");
+    await expect(page.getByRole("main")).toContainText("We keep order records for accounting.");
+    await expect(page.getByText(/Sample text/)).toBeHidden();
+    await page.goto("/en/admin/settings");
 
     // Put the store back through the dashboard, so the storefront caches refresh too.
     await logos2.getByRole("button", { name: "Remove logo" }).click();

@@ -28,7 +28,15 @@
   },
   "footer": {
     "copyright": "© {date, date, year} {storeName}. All rights reserved.",
-    "twemoji": "Emoji graphics by <twemoji>Twemoji</twemoji>, licensed under <license>CC BY 4.0</license>."
+    "twemoji": "Emoji graphics by <twemoji>Twemoji</twemoji>, licensed under <license>CC BY 4.0</license>.",
+    "legal": "Store information",
+    "links": {
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "refund-policy": "Refund policy",
+      "about": "About",
+      "contact": "Contact"
+    }
   },
   "cart": {
     "link": "Cart",

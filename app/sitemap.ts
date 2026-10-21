@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { categoryHref, productHref } from "@/lib/seo/paths";
 import { getCategories } from "@/features/categories/queries";
 import { getPublishedProductSlugs } from "@/features/products/queries";
+import { LEGAL_SLUGS, legalHref, type LegalSlug } from "@/features/settings/legal";
 import { routing } from "@/i18n/routing";
 import { appUrl } from "@/lib/env/public";
 import { languageAlternates, localizedPath } from "@/lib/seo/metadata";
@@ -24,6 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       path: productHref(product.slug),
       lastModified: product.updatedAt,
     })),
+    ...(Object.keys(LEGAL_SLUGS) as LegalSlug[]).map((slug) => ({ path: legalHref(slug) })),
   ];
 
   return pages.flatMap(({ path, lastModified }) => {

@@ -28,7 +28,15 @@
   },
   "footer": {
     "copyright": "© {date, date, year} {storeName}. جميع الحقوق محفوظة.",
-    "twemoji": "رسومات الإيموجي من <twemoji>Twemoji</twemoji>، مرخّصة بموجب <license>CC BY 4.0</license>."
+    "twemoji": "رسومات الإيموجي من <twemoji>Twemoji</twemoji>، مرخّصة بموجب <license>CC BY 4.0</license>.",
+    "legal": "معلومات المتجر",
+    "links": {
+      "terms": "الشروط",
+      "privacy": "الخصوصية",
+      "refund-policy": "سياسة الاسترداد",
+      "about": "من نحن",
+      "contact": "تواصل معنا"
+    }
   },
   "cart": {
     "link": "السلة",

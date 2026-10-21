@@ -69,3 +69,26 @@ export function basisPointsToPercent(basisPoints: number): string {
     .replace(/0+$/, "");
   return fraction ? `${whole}.${fraction}` : String(whole);
 }
+
+const LEGAL_COLUMNS = {
+  terms: { ar: "termsAr", en: "termsEn" },
+  privacy: { ar: "privacyAr", en: "privacyEn" },
+  refundPolicy: { ar: "refundPolicyAr", en: "refundPolicyEn" },
+  about: { ar: "aboutAr", en: "aboutEn" },
+  contact: { ar: "contactAr", en: "contactEn" },
+} as const;
+
+/** One legal page's owner-written HTML in both languages ("" when not written yet). */
+export async function findLegalPage(db: PrismaClient, page: keyof typeof LEGAL_COLUMNS) {
+  const columns = LEGAL_COLUMNS[page];
+  const settings = await db.storeSetting.findUnique({
+    where: { id: 1 },
+    select: { [columns.ar]: true, [columns.en]: true, supportEmail: true },
+  });
+  const row = (settings ?? {}) as Record<string, string | null | undefined>;
+  return {
+    ar: row[columns.ar] ?? "",
+    en: row[columns.en] ?? "",
+    supportEmail: row.supportEmail ?? null,
+  };
+}
