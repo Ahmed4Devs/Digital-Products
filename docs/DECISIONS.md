@@ -342,3 +342,76 @@ The limiter uses a custom PostgreSQL storage (`lib/rate-limit`): one atomic `INS
 | `react-email`                  | Email templates and rendering (spec §4)                                       |
 | `tsx` (dev)                    | Runs the TypeScript CLI scripts (`db:seed`, `owner:reset-password`)           |
 | `components/ui/*` (no package) | Input, Label, Checkbox on the already-installed Base UI                       |
+
+---
+
+# Phase 4 — Catalog
+
+## 2026-10-21 — Fully static catalog pages, enforced by the build
+
+**Decision.** The home, product and category pages export `ensureStatic = "navigation"`, the only level that Next.js validates during `next build`: any uncached data, `cookies()`, `headers()`, server `searchParams` or short-lived cache in those routes fails the build, even inside `<Suspense>`. This was verified by adding a `headers()` call to the shared footer; the build failed on the product route. `/products` keeps a static shell and renders its query-dependent results in `<Suspense>` (spec §8.1).
+
+**Reason.** Spec §12 and §17.5 §2: catalog routes must stay static (they get the static CSP without nonces in Phase 9).
+
+## 2026-10-21 — Personal header UI is resolved in the browser
+
+**Decision.** The header's account link became a small client component that reads `/api/auth/get-session` after hydration (served from Better Auth's signed cookie cache). The server and the first client render show the guest link. The Phase 6 cart count will work the same way.
+
+**Reason.** `ensureStatic = "navigation"` forbids request-time data anywhere in the route, including a session read streamed inside `<Suspense>` in the shared layout. A browser read is the documented exception and avoids shipping the Better Auth client to every page.
+
+## 2026-10-21 — Prerendering needs the database at build time
+
+**Decision.** `generateStaticParams` lists every published product and every category; products published later render on their first visit and are then served statically. With Cache Components the list must not be empty, so an empty catalog returns a placeholder slug that renders the 404 page.
+
+**⚠ Owner note.** Production builds therefore need read access to the database (and `APP_URL` and `S3_PUBLIC_BASE_URL`, which end up in prerendered HTML and in the image allowlist). Phase 10 documents this for Coolify/Dokploy builds.
+
+## 2026-10-21 — Cached reads and tags
+
+**Decision.** `features/*/data.ts` hold plain Prisma reads (integration-tested); `features/*/queries.ts` wrap them with `'use cache'`, the tags `products`, `product:{id}`, `categories` and `settings`, and `cacheLife("days")` (`"hours"` for search results). Cached values are plain data: the exchange rate leaves the database as a six-decimal string, never a Prisma `Decimal`. Phase 5 calls `updateTag` with the same names, so the daily lifetime is only a safety net.
+
+## 2026-10-21 — Search
+
+**Decision.** Case-insensitive `ILIKE` on titles and short descriptions in both languages, filtered by category and sorted by newest or price, 12 per page. LIKE wildcards in the query are escaped explicitly: Prisma passes `contains` values into the pattern unescaped, which a test caught (`%` matched every product). Query-string values that fail validation fall back to defaults, and unknown parameters (`utm_*`) are ignored so shared links keep working.
+
+**Limitation.** No Arabic normalization yet (alef/hamza forms, taa marbuta, diacritics in stored text). If the catalog grows, add normalized search columns or `pg_trgm`.
+
+## 2026-10-21 — Money in Phase 4
+
+**Decision.** `lib/money` converts USD cents to SAR halalas with integer-only `BigInt` arithmetic on the six-decimal rate and one rule: round half up to the nearest halala. A fixed SAR price set by the owner overrides the conversion. Prices are displayed as USD with SAR beneath; a price of zero shows "Free".
+
+**Display detail.** Currency symbols are bidi-isolated (`formatToParts` with the shared named formats, symbol in `<bdi>`): inside Arabic text "US$" would otherwise render as "$US", while "ر.س." keeps its own right-to-left order.
+
+## 2026-10-21 — Rich-text sanitizer
+
+**Decision.** `sanitize-html` with an allowlist: paragraphs, headings h2–h4, lists, emphasis, blockquote, code, `hr` and links. Links may use only `http`, `https` and `mailto`, and always get `rel="noopener noreferrer nofollow" target="_blank"`. Only `ltr`/`rtl`/`auto` are allowed as `dir` values; no styles, classes, images or event handlers. The same allowlist runs on write (Phase 5) and again on every render. On render its `textFilter` swaps emoji in the already-escaped text for Twemoji `<img>` tags built from parser output, so emoji in descriptions look the same everywhere without loosening the allowlist.
+
+**Reason.** Spec §5.1 and §17.5 §2: on catalog pages (no nonce) the sanitizer is the primary XSS defense. Tests cover script tags, event handlers, `javascript:`/`data:`/entity-encoded URLs, SVG payloads and escaped markup, and an E2E probe proves nothing in a hostile description runs.
+
+## 2026-10-21 — Slugs and text length
+
+**Decision.** `slugify()` keeps Arabic letters (so Arabic-only titles get readable slugs), removes emoji (including ZWJ sequences, flags, keycaps and skin tones), Arabic diacritics and tatweel, folds Latin accents, turns Arabic-Indic digits into Latin digits and joins words with hyphens (at most 80 characters). `graphemeLength()` and `graphemeString()` count user-perceived characters with `Intl.Segmenter` (spec §7.6).
+
+## 2026-10-21 — SEO
+
+**Decision.** Both root layouts set `metadataBase` from `APP_URL`. Storefront pages are `index, follow`; authentication, account and admin pages are `noindex`. Every catalog page has a canonical URL and `hreflang` alternates for `ar`, `en` and `x-default` (the unprefixed path, which `proxy.ts` sends to the visitor's language), plus Open Graph data with `ar_SA`/`en_US` locales. Product pages carry schema.org `Product` JSON-LD with an exact USD price; `<` is escaped so no value can close the script element. `/sitemap.xml` lists every public page in both languages with alternates; `/robots.txt` disallows `/api/` and the admin, account and checkout areas.
+
+## 2026-10-21 — Images
+
+**Decision.** `next/image` with AVIF then WebP, `qualities: [75]` (required since Next.js 16) and `remotePatterns` limited to `S3_PUBLIC_BASE_URL`. Optimizing from private IPs (local MinIO) is allowed only in development. Only the main product image is preloaded (LCP). Products without images show a neutral placeholder.
+
+## 2026-10-21 — Demo catalog and E2E data
+
+**Decision.** `pnpm db:seed:demo` loads a small bilingual catalog for local work until the admin can create products (Phase 5). It is refused unless `APP_URL` is a loopback address. E2E runs reset and seed the test database before `next build`, inside Playwright's web-server command, because catalog pages are prerendered from it. The global setup that used to reset the database after the server started was removed.
+
+## 2026-10-21 — Counts in messages
+
+**Decision.** Counts use plural-free phrasing ("عدد النتائج: 18" / "Results: 18").
+
+**Reason.** Arabic has six plural categories and English two, so ICU plural messages would differ in their placeholders and fail the cross-locale parity test that keeps translations in sync.
+
+## 2026-10-21 — Dependencies added in Phase 4
+
+| Package                      | Why                                                   |
+| ---------------------------- | ----------------------------------------------------- |
+| `sanitize-html`              | Allowlist sanitizer for product rich text (spec §5.1) |
+| `@types/sanitize-html` (dev) | Types for it                                          |

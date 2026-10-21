@@ -156,3 +156,62 @@ pnpm dev            # sign up at /ar/sign-up, read the email at http://127.0.0.1
 ### Next — Phase 4 (Catalog)
 
 Home page (featured, newest, categories), product listing with search, filters and pagination, product and category pages prerendered per locale with `ensureStatic`; cached queries with tags; bilingual fallback; slug and grapheme-length helpers; translated metadata, `hreflang`, sitemap and robots; optimized images.
+
+## Phase 4 — Catalog ✅ (tag `phase-04-catalog`)
+
+**Completed:** 2026-10-21
+
+### Built
+
+- **Pages:**
+  - Home: hero, featured products, categories with counts, new arrivals.
+  - `/products`: search, category filter, sort by newest or price, pagination. A plain GET form that works without JavaScript and navigates client-side with it.
+  - Product pages: breadcrumbs, cover and gallery, USD price with SAR beneath, compare-at price, sanitized rich-text description, delivery note.
+  - Category pages, and empty states for categories and searches.
+- **Static where intended:** home, product and category pages use `ensureStatic = "navigation"` and are prerendered per locale. The build fails if request-time code leaks in (verified). `/products` has a static shell with streamed results.
+- **Cached reads:** `features/{products,categories,settings}` with `'use cache'`, tags (`products`, `product:{id}`, `categories`, `settings`) and daily lifetimes, ready for `updateTag` in Phase 5. Only published products ever reach the storefront.
+- **Money (`lib/money`):** exact USD→SAR conversion with round-half-up to the halala, fixed SAR override, decimal strings for structured data. Currency symbols are bidi-isolated, so Arabic shows "US$ 29.00" and "ر.س." correctly.
+- **Text (`lib/text`):** Arabic-safe, emoji-free slugs; grapheme-based lengths; bilingual fallback (English pages show the Arabic text when English is empty, and vice versa).
+- **Rich text (`lib/rich-text`):** allowlist sanitizer, applied again on render, with Twemoji for emoji in descriptions.
+- **SEO:** translated titles and descriptions, canonical URLs, `hreflang` for `ar`, `en` and `x-default`, Open Graph, product JSON-LD, `/sitemap.xml` (both languages, alternates, nothing private), `/robots.txt`. Storefront pages are indexable; auth, account and admin are not.
+- **Images:** `next/image` with AVIF/WebP, sizes and the public bucket as the only remote source; only the main product image is preloaded; placeholder when a product has no image.
+- **Header:** primary navigation with a Products link. The account link is resolved in the browser so pages stay static.
+- **Demo data:** `pnpm db:seed:demo` (local only) and a shared fixture for the tests.
+
+### Tests
+
+| Suite                                    | Count | Covers                                                                                                                                                                                                                                                      |
+| ---------------------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit — `money`                           | 20    | Rate parsing, exact conversion and half-up rounding, fixed SAR override, decimal strings, currency isolation in Arabic and English                                                                                                                          |
+| Unit — `text`                            | 20    | Slugs (English, Arabic, diacritics, tatweel, Arabic-Indic digits, emoji at start/middle/end, length), slug validation, grapheme counts, bilingual fallback                                                                                                  |
+| Unit — `rich-text`                       | 14    | Allowed markup kept; scripts, handlers, dangerous URLs, images, SVG, styles removed; forced link attributes; escaped markup; Twemoji in descriptions without opening an injection path                                                                      |
+| Unit — search params, SEO, public config | 16    | Defaults and fallbacks, canonical query strings, alternates and Open Graph, slug decoding, image URLs                                                                                                                                                       |
+| Integration — `catalog/data.test.ts`     | 12    | Visibility (no drafts or archived), featured/newest order, detail with Arabic slugs, search in both languages, literal wildcards, category filter, price sorting, pagination, category counts, settings                                                     |
+| E2E — `catalog.spec.ts`                  | 31    | Browsing in Arabic and English, fallback text, prices (fixed SAR, compare-at, free), 404 for drafts, search/filter/sort/pagination, sanitizer probe, canonical/hreflang/JSON-LD, sitemap, robots, axe and product snapshots in all four locale/theme combos |
+
+Totals: **208 unit + 83 integration (Vitest), 74 E2E (Playwright)**. Coverage: 95.7 % lines overall; `lib/money`, `lib/text`, `lib/rich-text`, `lib/seo` and `lib/auth/dal` 100 %.
+
+### Verification
+
+```bash
+pnpm services:up
+pnpm db:migrate && pnpm db:seed && pnpm db:seed:demo
+pnpm check
+pnpm build          # catalog routes must stay ○ (static); a leak fails the build
+pnpm test:e2e
+pnpm dev            # http://localhost:3000/ar, /en/products, /ar/products/monthly-budget-planner
+```
+
+### Known limitations
+
+- No add-to-cart yet: product pages say purchasing opens soon (Phase 6).
+- Search has no Arabic normalization (hamza/alef forms, taa marbuta), see DECISIONS.
+- Builds read the database to prerender the catalog; Phase 10 documents build access for production.
+- No product images in the demo or test data: MinIO was not available in this environment, so image delivery is covered by configuration and URL tests only.
+- Unknown URLs still show Next.js's default untranslated 404 (Phase 9).
+- Windows visual baselines are outdated (header and home changed); Linux baselines are current.
+- `pnpm audit --prod`: no vulnerabilities; the dev-only `braces` advisory is unchanged.
+
+### Next — Phase 5 (Owner Product Management)
+
+Admin shell and navigation; product CRUD with bilingual tabs, USD price and optional fixed SAR price; categories; pre-signed uploads to `pending/` with `HeadObject` verification and file versioning; publish/archive; `updateTag` invalidation, audit log and sanitized rich text on write; exchange-rate setting.

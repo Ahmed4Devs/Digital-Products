@@ -94,7 +94,7 @@
 
 1. `features/products` & `features/categories`: cached queries (`'use cache'`, `cacheTag('products' | 'product:{id}' | 'categories' | 'settings')`, `cacheLife`), select only needed fields.
 2. Bilingual field fallback helper (`ar` empty → `en` and vice versa).
-3. Home (featured, newest, categories), `/products` (search, category filter, sort, pagination; search params Zod-validated; static shell + dynamic results in `Suspense`), `/products/[slug]` and `/categories/[slug]` prerendered per locale with `generateStaticParams` + `ensureStatic`.
+3. Home (featured, newest, categories), `/products` (search, category filter, sort, pagination; search params Zod-validated; static shell + dynamic results in `Suspense`), `/products/[slug]` and `/categories/[slug]` prerendered per locale with `generateStaticParams` + `ensureStatic`. `ensureStatic = "navigation"` forbids request-time data even inside `Suspense`, so personal header UI (account link, later the cart count) is resolved in the browser. E2E data is seeded before `next build`.
 4. Shared components: `PriceDisplay` (USD primary, SAR beneath), `ProductCard`, empty states.
 5. Product rich-text rendering through the allowlist sanitizer (render-side pass).
 6. `next/image` with AVIF/WebP, `remotePatterns` for the public images bucket only; `priority` on the LCP image.
