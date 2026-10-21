@@ -1,5 +1,7 @@
+import { makeSignature } from "better-auth/crypto";
 import { NextRequest } from "next/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createProxy } from "@/lib/proxy/create-proxy";
 import proxy from "@/proxy";
 
 function request(path: string, cookie?: string): NextRequest {
@@ -42,13 +44,62 @@ describe("proxy (optimistic checks only)", () => {
     expect(response.headers.get("x-middleware-rewrite") ?? "").not.toContain("_not-found");
   });
 
-  it("leaves the admin decision to the layout when the role is unknown", async () => {
-    const response = await proxy(request("/ar/admin", SESSION_COOKIE));
-    expect(response.headers.get("x-middleware-rewrite") ?? "").not.toContain("_not-found");
+  it("leaves the admin decision to the layout when nothing can be verified", async () => {
+    vi.stubEnv("BETTER_AUTH_SECRET", "");
+    try {
+      const response = await proxy(request("/ar/admin", SESSION_COOKIE));
+      expect(response.headers.get("x-middleware-rewrite") ?? "").not.toContain("_not-found");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("does not treat look-alike paths as protected", async () => {
     const response = await proxy(request("/ar/accounting-guide"));
     expect(response.status).not.toBe(307);
+  });
+});
+
+describe("admin 404s from the session token", () => {
+  const SECRET = "unit-test-secret-at-least-32-characters-long";
+  const lookUp = vi.fn(async (token: string) => token === "owner-token");
+  const withLookup = createProxy(lookUp);
+  const notFound = (response: Response) =>
+    (response.headers.get("x-middleware-rewrite") ?? "").includes("_not-found");
+  const signed = async (token: string) =>
+    `better-auth.session_token=${encodeURIComponent(`${token}.${await makeSignature(token, SECRET)}`)}`;
+
+  beforeEach(() => {
+    vi.stubEnv("BETTER_AUTH_SECRET", SECRET);
+    lookUp.mockClear();
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("lets the owner's session through and answers everyone else with a real 404", async () => {
+    expect(
+      notFound(await withLookup(request("/en/admin/orders", await signed("owner-token")))),
+    ).toBe(false);
+    expect(
+      notFound(await withLookup(request("/en/admin/orders", await signed("customer-token")))),
+    ).toBe(true);
+    expect(lookUp).toHaveBeenCalledTimes(2);
+  });
+
+  it("never looks up tokens with a forged signature", async () => {
+    expect(
+      notFound(
+        await withLookup(request("/en/admin", "better-auth.session_token=owner-token.forged")),
+      ),
+    ).toBe(true);
+    expect(lookUp).not.toHaveBeenCalled();
+  });
+
+  it("leaves the decision to the layout when the lookup fails", async () => {
+    const failing = createProxy(async () => {
+      throw new Error("database unavailable");
+    });
+    expect(notFound(await failing(request("/en/admin", await signed("any-token"))))).toBe(false);
   });
 });
