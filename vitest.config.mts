@@ -29,7 +29,13 @@ export default defineConfig({
         "instrumentation.ts",
         "proxy.ts",
       ],
-      exclude: ["**/*.d.ts", "lib/utils.ts"],
+      exclude: [
+        "**/*.d.ts",
+        "lib/utils.ts",
+        // 'use cache' wrappers only run inside Next.js; the reads they wrap (data.ts)
+        // are integration-tested and the wrappers are exercised end to end.
+        "features/**/queries.ts",
+      ],
       reporter: ["text", "html", "lcov"],
     },
     projects: [
