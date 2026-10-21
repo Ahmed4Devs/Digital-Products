@@ -619,3 +619,24 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 ## 2026-10-21 — Coverage floor
 
 **Decision.** Vitest fails below 90 % lines, 88 % statements, 90 % functions and 78 % branches, a little under the current figures (94 / 91 / 93 / 82), so coverage cannot quietly erode.
+
+## 2026-10-21 — Production image
+
+**Decision.** A multi-stage `Dockerfile` on `node:24-bookworm-slim`: `deps` installs every dependency with the lockfile, `builder` runs `next build` and then prunes to production dependencies, and `runner` copies the app read-only for the unprivileged `node` user, with only `.next` writable (optimized images and regenerated pages). The image declares a `HEALTHCHECK` on `/api/health` and starts `next start` on port 3000.
+
+- **The build gets the environment as a BuildKit secret** (`build_env`, mounted as `.env.production.local` for that one step): catalog pages are prerendered from the database, and `APP_URL`, `S3_PUBLIC_BASE_URL` and `S3_ENDPOINT` are baked into the image allowlist and the CSP. Secrets never appear as build arguments or in a layer (checked with `docker history`).
+- **Not the standalone output:** the container also runs migrations, the seed, the daily maintenance task and the owner recovery script, which need the Prisma CLI, `tsx` and the TypeScript sources. `prisma` and `tsx` move to production dependencies for that; the image keeps `pnpm` (pinned by `packageManager`) so the same `pnpm` commands work inside it.
+- **OpenSSL** is installed for Prisma's migration engine (the slim image has none); the step is skipped when the base image already has it. An optional `extra_ca` secret lets the build run behind a TLS-inspecting proxy (apt, pnpm, corepack and font downloads trust it).
+- Verified locally: the image builds (on `node:24-bookworm`, since this environment's network policy blocks the Debian mirror the slim image needs), runs as `node`, cannot write outside `.next`, becomes healthy, serves the store with the right statuses and headers, and runs `prisma migrate status` and the maintenance task.
+
+## 2026-10-21 — Migrations through a direct connection
+
+**Decision.** `prisma.config.ts` uses `DIRECT_DATABASE_URL` when set, else `DATABASE_URL`. `prisma migrate deploy` takes a session-level advisory lock, which transaction-mode poolers break; the app itself keeps using `DATABASE_URL`.
+
+## 2026-10-21 — Single app instance
+
+**Decision.** Production runs one app container. Cached catalog reads (`'use cache'`) and the pages built from them live in the instance and are invalidated there by `updateTag`; a second replica would serve stale pages until its own cache expired. Scaling out needs a shared cache handler first (documented in DEPLOYMENT.md).
+
+## 2026-10-21 — Production environment template
+
+**Decision.** `.env.production.example` lists every variable the server reads in production, with placeholders and notes (TLS database URL, R2 endpoint and region `auto`, Resend, Turnstile, trusted proxy range, live gateway environments, owner variables commented out and removed after seeding). A unit test checks that both templates name every variable and that the production template passes the production checks.

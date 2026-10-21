@@ -1,5 +1,5 @@
 # Local development services only. Production uses an independent PostgreSQL 18,
-# Cloudflare R2 and Resend (see docs/DEPLOYMENT.md once Phase 10 lands).
+# Cloudflare R2 and Resend (see docs/DEPLOYMENT.md).
 #
 # Run through the package scripts so variables come from .env.local:
 #   pnpm services:up   /   pnpm services:down

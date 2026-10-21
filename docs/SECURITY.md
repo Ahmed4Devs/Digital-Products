@@ -1,6 +1,6 @@
 # Security
 
-The baseline is OWASP ASVS Level 2 and the OWASP Top 10 (spec §5.1). This document is the threat model, the checklist the code is held to, and how each Top 10 risk is handled. Decisions behind individual measures are in [`DECISIONS.md`](DECISIONS.md); deployment hardening is in `DEPLOYMENT.md` (Phase 10).
+The baseline is OWASP ASVS Level 2 and the OWASP Top 10 (spec §5.1). This document is the threat model, the checklist the code is held to, and how each Top 10 risk is handled. Decisions behind individual measures are in [`DECISIONS.md`](DECISIONS.md); deployment hardening is in [`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 To report a vulnerability, email the store's support address (Settings → Support email) rather than opening a public issue.
 

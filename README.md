@@ -3,7 +3,7 @@
 A bilingual (Arabic / English) store that sells downloadable digital products, built with Next.js 16, React 19, Tailwind CSS 4, shadcn/ui (Base UI), Prisma 7 and PostgreSQL 18.
 
 - Specification: [`context/MASTER_PROMPT.md`](context/MASTER_PROMPT.md)
-- Plan: [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) · Decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) · Progress: [`docs/PROGRESS.md`](docs/PROGRESS.md) · Security: [`docs/SECURITY.md`](docs/SECURITY.md)
+- Plan: [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) · Decisions: [`docs/DECISIONS.md`](docs/DECISIONS.md) · Progress: [`docs/PROGRESS.md`](docs/PROGRESS.md) · Security: [`docs/SECURITY.md`](docs/SECURITY.md) · Deployment: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
 
 ## Prerequisites
 
@@ -117,6 +117,20 @@ All ports listen on `127.0.0.1` only and use project-specific numbers so they do
 - Visual baselines are per operating system (`*-win32.png`, `*-linux.png`); refresh yours after intentional visual changes with `pnpm test:e2e --update-snapshots`.
 - A pre-commit hook runs format check, lint, typecheck and unit tests.
 
+## Production
+
+The store is prepared for production but not deployed. `docs/DEPLOYMENT.md` covers the VPS, the independent PostgreSQL 18 database, Cloudflare R2, Resend, the Docker image, migrations, the daily maintenance task, backups and the go-live checklist. In short:
+
+```bash
+# The build prerenders catalog pages from the database, so it gets the production
+# environment as a BuildKit secret (never a build argument or an image layer).
+docker build --secret id=build_env,src=.env.production -t digital-products .
+# In the container:
+pnpm db:deploy         # every deployment, before the new container starts
+pnpm db:seed           # once: the owner (from OWNER_*) and default settings
+pnpm maintenance:run   # daily scheduled task
+```
+
 ## Project layout
 
 ```text
@@ -184,7 +198,10 @@ eslint-rules/        local rule that forbids physical left/right Tailwind utilit
 prisma/              schema, migrations and seed; prisma.config.ts holds connection settings
 docker/              init scripts and images for the local services
 tests/               unit/, integration/, e2e/, support/
-docs/                plan, decisions, progress, sandbox testing, security (deployment comes in Phase 10)
+docs/                plan, decisions, progress, sandbox testing, security, deployment and the
+                     go-live checklist
+Dockerfile           production image (multi-stage, non-root); .env.production.example lists
+                     its environment
 ```
 
 ## Conventions

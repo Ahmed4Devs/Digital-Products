@@ -474,3 +474,38 @@ pnpm build && pnpm start   # then: curl -sI localhost:3000/en | grep -i content-
 ### Next — Phase 10 (Release Preparation)
 
 Multi-stage non-root Dockerfile, production environment template, health check, `docs/DEPLOYMENT.md` (VPS, Coolify/Dokploy, PostgreSQL 18, R2, Resend, migrations, backups, the maintenance schedule) and the go-live checklist.
+
+## Phase 10 — Release Preparation ✅ (tag `v1.0.0-rc.1`)
+
+**Completed:** 2026-10-21. Nothing was deployed (spec rule).
+
+### Built
+
+- **`Dockerfile`** (multi-stage, non-root `node` user, read-only app, writable `.next` only, `HEALTHCHECK`), `.dockerignore`, and an optional extra-CA helper for builds behind TLS-inspecting proxies. The build receives the production environment as a BuildKit secret.
+- **`.env.production.example`**: every production variable with placeholders and notes, tested against the production checks.
+- **Health check:** `/api/health` (database readiness, 200/503) used by the image and the platform.
+- **`docs/DEPLOYMENT.md`**: VPS hardening, Coolify/Dokploy setup, the independent PostgreSQL 18 database (TLS, IP allowlist, pooling, direct URL for migrations, build-time access), Cloudflare R2 (buckets, token scope, CORS for pre-signed PUT, custom domain), Resend (SPF, DKIM, DMARC), Turnstile, the first deployment, the daily maintenance task, backups and restore drills, operations, and the **go-live checklist** (live gateway keys and webhooks, Apple Pay domain registration with Moyasar, Paddle website review, DNS and email records, legal pages, test purchases and refunds).
+- Migrations prefer `DIRECT_DATABASE_URL` when set; `prisma` and `tsx` are production dependencies so the container can run migrations, the seed and maintenance.
+- Version `1.0.0-rc.1`.
+
+### Verification
+
+| Check                     | Result                                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Image build               | Builds with the environment as a secret; no secret in `docker history`                                         |
+| Container                 | Runs as `node` (uid 1000), app files read-only, `.next` writable, Docker health `healthy`                      |
+| Pages from the container  | `/api/health` 200, home, product and legal pages 200, `/en/admin` 404, unknown paths 404; CSP and HSTS present |
+| Commands in the container | `prisma migrate status`: schema up to date; `pnpm maintenance:run`: JSON summary                               |
+| Templates                 | Unit test: both templates name every variable; the production one passes the production checks                 |
+| Full suites               | 311 unit + 203 integration (Vitest), 124 E2E (Playwright), `pnpm audit --prod` clean                           |
+
+The local image was built on `node:24-bookworm`: this environment's network policy blocks `deb.debian.org`, which the slim image needs for OpenSSL. The default (slim) build installs it with apt as documented.
+
+### Known limitations
+
+- Real sandbox runs with each gateway (docs/SANDBOX_TESTING.md) and the live go-live checklist are left to the owner: they need provider accounts, credentials and a public domain.
+- Windows visual baselines are outdated; Linux baselines are current.
+
+### Release
+
+`v1.0.0-rc.1` marks the first release candidate: every phase of the plan is complete, documented and tested.
