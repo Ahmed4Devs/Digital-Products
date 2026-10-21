@@ -1,5 +1,15 @@
 // Prisma ORM 7. Connection URLs live in prisma.config.ts, not here.
-// The full data model (spec Section 9) lands in Phase 3.
+//
+// Conventions (spec Section 9):
+//   - IDs default to PostgreSQL 18's native, time-ordered uuidv7().
+//   - Money is an integer in minor units (cents / halalas) next to its currency.
+//   - Translatable fields are column pairs (…Ar / …En).
+//   - Tables and columns use snake_case; Prisma fields stay camelCase.
+//   - Constraints Prisma cannot express (CHECKs, partial unique indexes, sequence start)
+//     live in the migration SQL and are listed in comments next to their models.
+//
+// The User, Session, Account and Verification models follow the shape Better Auth 1.7
+// expects; Better Auth validates them against its own configuration at startup.
 
 generator client {
   provider = "prisma-client"
@@ -8,4 +18,513 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  customer
+  owner
+
+  @@map("user_role")
+}
+
+enum Locale {
+  ar
+  en
+
+  @@map("locale")
+}
+
+enum ProductStatus {
+  draft
+  published
+  archived
+
+  @@map("product_status")
+}
+
+enum ProductImageKind {
+  cover
+  gallery
+
+  @@map("product_image_kind")
+}
+
+enum OrderStatus {
+  pending
+  paid
+  failed
+  refunded
+  expired
+
+  @@map("order_status")
+}
+
+enum Currency {
+  USD
+  SAR
+
+  @@map("currency")
+}
+
+/// `fake` is the test-only adapter; it can never be enabled on a deployed server.
+enum PaymentProviderId {
+  moyasar
+  paddle
+  paypal
+  fake
+
+  @@map("payment_provider")
+}
+
+/// Paddle tax modes the store sets explicitly on every item (spec §17.5 §3).
+enum ProviderTaxMode {
+  internal
+  external
+
+  @@map("provider_tax_mode")
+}
+
+enum CouponType {
+  percent
+  fixed
+
+  @@map("coupon_type")
+}
+
+enum CouponRedemptionStatus {
+  reserved
+  redeemed
+  released
+
+  @@map("coupon_redemption_status")
+}
+
+// ── Authentication (Better Auth) ─────────────────────────────────────────────
+
+/// Migration SQL adds:
+///   - CHECK: a username exists only on the owner account.
+///   - UNIQUE partial index: at most one owner.
+model User {
+  id              String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  name            String
+  email           String   @unique
+  emailVerified   Boolean  @default(false) @map("email_verified")
+  image           String?
+  role            UserRole @default(customer)
+  preferredLocale Locale   @default(ar) @map("preferred_locale")
+  banned          Boolean  @default(false)
+  /// Owner only (username plugin); customers never have one.
+  username        String?  @unique
+  firstName       String?  @map("first_name")
+  lastName        String?  @map("last_name")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  sessions          Session[]
+  accounts          Account[]
+  orders            Order[]
+  entitlements      Entitlement[]
+  couponRedemptions CouponRedemption[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  token     String   @unique
+  expiresAt DateTime @map("expires_at") @db.Timestamptz(3)
+  /// Keyed hash of the client IP, never the address itself (spec §5.1).
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id") @db.Uuid
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz(3)
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz(3)
+  scope                 String?
+  /// Password hash (Better Auth's scrypt) for the credential provider.
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+/// Email verification, password reset and magic-link tokens. Identifiers are stored
+/// hashed (Better Auth `verification.storeIdentifier: "hashed"`).
+model Verification {
+  id         String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz(3)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verifications")
+}
+
+/// Fixed-window counters behind Better Auth's limiter and the app's own limits.
+/// Keys are keyed hashes, so no IP address is ever stored (spec §5.1).
+model RateLimitBucket {
+  key             String   @id
+  count           Int
+  windowStartedAt DateTime @map("window_started_at") @db.Timestamptz(3)
+
+  @@index([windowStartedAt])
+  @@map("rate_limit_buckets")
+}
+
+// ── Catalog ──────────────────────────────────────────────────────────────────
+
+model Category {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  slug      String   @unique
+  nameAr    String   @map("name_ar")
+  nameEn    String   @map("name_en")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  products Product[]
+
+  @@index([sortOrder])
+  @@map("categories")
+}
+
+/// Migration SQL adds CHECKs: non-negative prices, and a title in at least one language.
+/// Products with sales are archived, never deleted (OrderItem and Entitlement restrict it).
+model Product {
+  id                     String        @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  slug                   String        @unique
+  titleAr                String        @default("") @map("title_ar")
+  titleEn                String        @default("") @map("title_en")
+  shortDescriptionAr     String        @default("") @map("short_description_ar")
+  shortDescriptionEn     String        @default("") @map("short_description_en")
+  /// Sanitized rich text (allowlist sanitizer on write and on render).
+  descriptionAr          String        @default("") @map("description_ar")
+  descriptionEn          String        @default("") @map("description_en")
+  priceUsdCents          Int           @map("price_usd_cents")
+  /// Optional fixed SAR price that overrides the converted one.
+  fixedPriceSarHalalas   Int?          @map("fixed_price_sar_halalas")
+  compareAtPriceUsdCents Int?          @map("compare_at_price_usd_cents")
+  status                 ProductStatus @default(draft)
+  featured               Boolean       @default(false)
+  categoryId             String?       @map("category_id") @db.Uuid
+  seoTitleAr             String?       @map("seo_title_ar")
+  seoTitleEn             String?       @map("seo_title_en")
+  seoDescriptionAr       String?       @map("seo_description_ar")
+  seoDescriptionEn       String?       @map("seo_description_en")
+  publishedAt            DateTime?     @map("published_at") @db.Timestamptz(3)
+  createdAt              DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  category     Category?      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  images       ProductImage[]
+  files        ProductFile[]
+  orderItems   OrderItem[]
+  entitlements Entitlement[]
+
+  @@index([status, createdAt])
+  @@index([categoryId])
+  @@map("products")
+}
+
+/// Public images (cover and gallery), stored in the public bucket / CDN.
+/// Migration SQL adds a UNIQUE partial index: one cover per product.
+model ProductImage {
+  id         String           @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  productId  String           @map("product_id") @db.Uuid
+  kind       ProductImageKind
+  storageKey String           @unique @map("storage_key")
+  width      Int
+  height     Int
+  altAr      String           @default("") @map("alt_ar")
+  altEn      String           @default("") @map("alt_en")
+  sortOrder  Int              @default(0) @map("sort_order")
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+  @@map("product_images")
+}
+
+/// A downloadable file in the private bucket. Size and checksum are read from storage,
+/// never from the client. Superseded versions are kept (never hard-deleted once
+/// downloaded, spec §17.5 §8); buyers always get the latest non-superseded version.
+model ProductFile {
+  id           String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  productId    String    @map("product_id") @db.Uuid
+  storageKey   String    @unique @map("storage_key")
+  fileName     String    @map("file_name")
+  sizeBytes    BigInt    @map("size_bytes")
+  checksum     String
+  mimeType     String    @map("mime_type")
+  version      Int       @default(1)
+  supersededAt DateTime? @map("superseded_at") @db.Timestamptz(3)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  downloadLogs DownloadLog[]
+
+  @@index([productId, supersededAt])
+  @@map("product_files")
+}
+
+// ── Orders and payments ──────────────────────────────────────────────────────
+
+/// Migration SQL adds:
+///   - CHECKs: non-negative amounts; total = subtotal − discount + tax.
+///   - the order-number sequence starting at 100001.
+/// Orders outlive their customer: userId is nulled on account deletion and the email
+/// snapshot keeps the record usable for accounting (spec §17.5 §5).
+model Order {
+  id                    String             @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  orderNumber           Int                @unique @default(autoincrement()) @map("order_number")
+  userId                String?            @map("user_id") @db.Uuid
+  customerEmailSnapshot String             @map("customer_email_snapshot")
+  status                OrderStatus        @default(pending)
+  subtotalUsdCents      Int                @map("subtotal_usd_cents")
+  discountUsdCents      Int                @default(0) @map("discount_usd_cents")
+  /// Store tax only; never set for Paddle, which is the Merchant of Record.
+  taxUsdCents           Int                @default(0) @map("tax_usd_cents")
+  totalUsdCents         Int                @map("total_usd_cents")
+  chargedCurrency       Currency           @map("charged_currency")
+  chargedAmountMinor    Int                @map("charged_amount_minor")
+  providerTaxMode       ProviderTaxMode?   @map("provider_tax_mode")
+  providerTaxMinor      Int?               @map("provider_tax_minor")
+  /// USD → SAR rate at checkout, kept even when the charge is in USD.
+  exchangeRateUsed      Decimal            @map("exchange_rate_used") @db.Decimal(12, 6)
+  couponId              String?            @map("coupon_id") @db.Uuid
+  /// A paid order is never rejected over coupon limits; overshoots are flagged instead.
+  couponOvershoot       Boolean            @default(false) @map("coupon_overshoot")
+  locale                Locale
+  /// Null for zero-total orders, which skip the gateway (spec §17.5 §6).
+  provider              PaymentProviderId?
+  providerReference     String?            @map("provider_reference")
+  paidAt                DateTime?          @map("paid_at") @db.Timestamptz(3)
+  refundedAt            DateTime?          @map("refunded_at") @db.Timestamptz(3)
+  createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user          User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  coupon        Coupon?           @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  items         OrderItem[]
+  paymentEvents PaymentEvent[]
+  redemption    CouponRedemption?
+
+  @@unique([provider, providerReference])
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+/// Quantity is always 1. Titles and prices are snapshots taken at purchase time.
+model OrderItem {
+  id                String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  orderId           String   @map("order_id") @db.Uuid
+  productId         String   @map("product_id") @db.Uuid
+  titleAr           String   @map("title_ar")
+  titleEn           String   @map("title_en")
+  unitPriceUsdCents Int      @map("unit_price_usd_cents")
+  /// The line price actually sent to the gateway, in the order's charged currency.
+  unitChargedMinor  Int      @map("unit_charged_minor")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  entitlements Entitlement[]
+
+  @@unique([orderId, productId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+/// Webhook log and idempotency guard: one row per provider event.
+model PaymentEvent {
+  id              String            @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  provider        PaymentProviderId
+  providerEventId String            @map("provider_event_id")
+  type            String
+  payload         Json
+  orderId         String?           @map("order_id") @db.Uuid
+  processedAt     DateTime?         @map("processed_at") @db.Timestamptz(3)
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  order Order? @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@unique([provider, providerEventId])
+  @@index([orderId])
+  @@map("payment_events")
+}
+
+// ── Delivery ─────────────────────────────────────────────────────────────────
+
+/// A customer's right to a product; powers My Purchases. Written with an upsert on
+/// (userId, productId) and revoked (never deleted) on refund (spec §17.5 §4).
+model Entitlement {
+  id            String    @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  productId     String    @map("product_id") @db.Uuid
+  /// Null when the owner grants access without an order.
+  orderItemId   String?   @map("order_item_id") @db.Uuid
+  /// Statistics only; the rate limit is computed from DownloadLog.
+  downloadCount Int       @default(0) @map("download_count")
+  revokedAt     DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orderItem    OrderItem?    @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  downloadLogs DownloadLog[]
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@map("entitlements")
+}
+
+/// One row per download; the source of the per-minute download limit.
+model DownloadLog {
+  id            String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  entitlementId String   @map("entitlement_id") @db.Uuid
+  fileId        String   @map("file_id") @db.Uuid
+  ipHash        String?  @map("ip_hash")
+  userAgent     String?  @map("user_agent")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  entitlement Entitlement @relation(fields: [entitlementId], references: [id], onDelete: Cascade)
+  file        ProductFile @relation(fields: [fileId], references: [id], onDelete: Restrict)
+
+  @@index([entitlementId, createdAt])
+  @@index([fileId])
+  @@map("download_logs")
+}
+
+// ── Coupons ──────────────────────────────────────────────────────────────────
+
+/// `value` is a whole percentage (1–100) for `percent` and USD cents for `fixed`.
+/// Migration SQL adds CHECKs on value ranges and non-negative counters.
+model Coupon {
+  id                       String     @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  /// Stored upper-case; codes are matched case-insensitively.
+  code                     String     @unique
+  type                     CouponType
+  value                    Int
+  minSubtotalUsdCents      Int?       @map("min_subtotal_usd_cents")
+  usageLimit               Int?       @map("usage_limit")
+  usedCount                Int        @default(0) @map("used_count")
+  reservedCount            Int        @default(0) @map("reserved_count")
+  allowMultiplePerCustomer Boolean    @default(false) @map("allow_multiple_per_customer")
+  startsAt                 DateTime?  @map("starts_at") @db.Timestamptz(3)
+  endsAt                   DateTime?  @map("ends_at") @db.Timestamptz(3)
+  active                   Boolean    @default(true)
+  createdAt                DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  orders      Order[]
+  redemptions CouponRedemption[]
+
+  @@map("coupons")
+}
+
+/// Reservation → redemption lifecycle (spec §17.5 §9). `singleUse` snapshots
+/// `!allowMultiplePerCustomer` at reservation time so the database can enforce it:
+/// migration SQL adds a UNIQUE partial index on (couponId, userId) for active
+/// (reserved / redeemed) single-use rows.
+model CouponRedemption {
+  id        String                 @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  couponId  String                 @map("coupon_id") @db.Uuid
+  userId    String?                @map("user_id") @db.Uuid
+  orderId   String                 @unique @map("order_id") @db.Uuid
+  status    CouponRedemptionStatus @default(reserved)
+  singleUse Boolean                @map("single_use")
+  expiresAt DateTime               @map("expires_at") @db.Timestamptz(3)
+  createdAt DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime               @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  coupon Coupon @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  order  Order  @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  @@index([couponId, status])
+  @@index([status, expiresAt])
+  @@map("coupon_redemptions")
+}
+
+// ── Settings and audit ───────────────────────────────────────────────────────
+
+/// Singleton row (id = 1, enforced by a CHECK in the migration SQL).
+model StoreSetting {
+  id                     Int      @id @default(1)
+  storeNameAr            String   @default("") @map("store_name_ar")
+  storeNameEn            String   @default("") @map("store_name_en")
+  logoLightKey           String?  @map("logo_light_key")
+  logoDarkKey            String?  @map("logo_dark_key")
+  supportEmail           String?  @map("support_email")
+  usdToSarRate           Decimal  @default(3.75) @map("usd_to_sar_rate") @db.Decimal(12, 6)
+  taxEnabled             Boolean  @default(false) @map("tax_enabled")
+  /// Store tax rate in basis points (1500 = 15 %).
+  taxRateBasisPoints     Int      @default(0) @map("tax_rate_basis_points")
+  vatNumber              String?  @map("vat_number")
+  moyasarEnabled         Boolean  @default(false) @map("moyasar_enabled")
+  paddleEnabled          Boolean  @default(false) @map("paddle_enabled")
+  paypalEnabled          Boolean  @default(false) @map("paypal_enabled")
+  downloadsPerMinute     Int      @default(5) @map("downloads_per_minute")
+  /// Age after which pending orders expire (maintenance task, spec §17.5 §10).
+  pendingOrderTtlMinutes Int      @default(60) @map("pending_order_ttl_minutes")
+  termsAr                String   @default("") @map("terms_ar")
+  termsEn                String   @default("") @map("terms_en")
+  privacyAr              String   @default("") @map("privacy_ar")
+  privacyEn              String   @default("") @map("privacy_en")
+  refundPolicyAr         String   @default("") @map("refund_policy_ar")
+  refundPolicyEn         String   @default("") @map("refund_policy_en")
+  aboutAr                String   @default("") @map("about_ar")
+  aboutEn                String   @default("") @map("about_en")
+  contactAr              String   @default("") @map("contact_ar")
+  contactEn              String   @default("") @map("contact_en")
+  updatedAt              DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("store_settings")
+}
+
+/// One row per owner mutation, with a before/after diff.
+model AuditLog {
+  id        String   @id @default(dbgenerated("uuidv7()")) @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  diff      Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
 }
