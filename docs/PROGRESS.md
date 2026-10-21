@@ -101,3 +101,58 @@ pnpm dev                           # http://localhost:3000 → /ar or /en
 ### Next — Phase 3 (Database and Authentication)
 
 Full Prisma schema with the §17.5 fields and the initial migration; Better Auth (email/password with verification, magic link without sign-up, owner-only username sign-in, `hooks.before` enforcement verified against the installed 1.7 endpoints, rate limits, compromised-password check, Next.js cookies plugin); Turnstile on sign-up; bilingual React Email templates via Mailpit; customer and owner auth pages; owner seed and recovery CLI; Data Access Layer and protected layouts.
+
+## Phase 3 — Database and Authentication ✅ (tag `phase-03-auth`)
+
+**Completed:** 2026-10-21
+
+### Built
+
+- **Data model (spec §9 + §17.5):** every entity in one initial migration — users and Better Auth tables, categories, products, images, versioned files, orders and items with snapshots, payment events, entitlements, download logs, coupons and redemptions, settings, audit log and rate-limit buckets. `uuidv7()` IDs, integer money, `timestamptz`, snake_case. Migration SQL adds what Prisma cannot express: a single owner, usernames only on the owner, consistent order totals, non-negative money, coupon value ranges, one active single-use redemption per customer, one cover per product, order numbers from 100001, a singleton settings row.
+- **Better Auth 1.7.12:** Prisma adapter with transactions; email + password with required verification, 8–128 characters, compromised-password check (Have I Been Pwned), sessions revoked on reset; magic links (10 min, single use, hashed, no sign-up); `username` plugin for the owner; protected `role`/`banned`/name fields; preferred language stored at sign-up; signed cookie cache; `nextCookies()`; unused endpoints disabled.
+- **Policy hook (§17.5 §7)** verified against the installed endpoint paths: owner kept off email and magic-link sign-in with the exact invalid-credentials error, non-owners kept off username sign-in, sign-up field allow-list, protected fields on every update path, plus a session-creation backstop that also refuses banned accounts.
+- **Rate limits:** stricter per-IP rules for customer sign-in, owner sign-in, magic links, password resets and sign-up, plus 10 attempts per 15 minutes per account. Stored in PostgreSQL under keyed hashes; session IPs are hashed too.
+- **Turnstile** on sign-up, verified server-side by Better Auth's captcha plugin; site key read at request time.
+- **Email:** bilingual React Email templates (verification, magic link, password reset; light, dark-mode-safe, RTL/LTR), Resend in production and Mailpit locally, sent after the response.
+- **Pages:** sign-in (password + magic link, remember me), sign-up, forgot and reset password, verify email, owner sign-in at `/[locale]/admin/sign-in`, a placeholder account page and admin overview. Better Auth error codes map to translated messages; email, password and username inputs are always LTR.
+- **Protection layers (§6.3):** `proxy.ts` (optimistic redirects and admin 404s), the Data Access Layer (`getSessionUser`, `requireCustomer`, `requireVerifiedCustomer`, `requireOwner`), server-checked account and admin layouts, and checks in every page. The admin answers 404 to everyone but the owner.
+- **Two root layouts:** a static storefront root and a dynamic `(secure)` root for auth, account and admin; this prepares the nonce routes of §17.5 §2.
+- **CLI:** `pnpm db:seed` (owner from `OWNER_*`, default settings; idempotent) and `pnpm owner:reset-password` (offline recovery, revokes owner sessions).
+- **Test doubles:** `TEST_DOUBLES=on` (loopback `APP_URL` only) for Turnstile and Have I Been Pwned.
+
+### Tests
+
+| Suite                                        | Count | Covers                                                                                                                                                                                                                                                                          |
+| -------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integration — `auth/policy.test.ts`          | 34    | Every §17.5 §7 rule through the real handler: sign-up allow-list, enumeration-safe answers, owner/customer separation, magic links, password reset (generic answer, owner recovery, session revocation, hashed tokens), protected fields, rate limits, hashed IPs, cookie flags |
+| Integration — `auth/external-checks.test.ts` | 6     | The real Turnstile and Have I Been Pwned plugins against stubbed services (only a 5-character hash prefix leaves the server)                                                                                                                                                    |
+| Integration — `auth/dal.test.ts`             | 11    | Guards with real sessions: guests, customers, unverified customers, banned and revoked sessions, owner-only access, safe return paths                                                                                                                                           |
+| Integration — `auth/owner-account.test.ts`   | 6     | Idempotent seed, single owner, recovery revokes sessions, weak and breached passwords refused, settings defaults                                                                                                                                                                |
+| Integration — `rate-limit`, `db/constraints` | 10    | Atomic limiter under concurrency, window reset; uuidv7 ordering, CHECKs, order numbers, orders kept on account deletion, coupon constraints                                                                                                                                     |
+| Unit — auth, email, security, proxy, env     | 56    | Policy helpers, open-redirect guard, error-code mapping and translations, form checks, background tasks, keyed hashing, Resend/Mailpit payloads, email rendering in both languages, proxy rules, new environment rules                                                          |
+| E2E — `auth.spec.ts`                         | 25    | Sign-up → Mailpit verification → sign-in → sign-out; unverified sign-in; magic link with return path; password reset; owner sign-in; admin 404 for guests and customers; axe and LTR inputs on auth pages in ar/en × light/dark; visual snapshots                               |
+
+Totals: **138 unit + 71 integration (Vitest), 43 E2E (Playwright)**. Coverage: 97.1 % lines overall; `lib/auth/dal.ts` 100 %, `lib/auth` 95.9 %.
+
+### Verification
+
+```bash
+pnpm services:up
+pnpm db:migrate && pnpm db:seed
+pnpm check
+pnpm test:e2e
+pnpm dev            # sign up at /ar/sign-up, read the email at http://127.0.0.1:8032
+```
+
+### Known limitations
+
+- The account page is a placeholder; email change, password change and account deletion arrive in Phase 8 (Better Auth's own endpoints for these are disabled until then).
+- A customer whose signed session cache has expired sees the admin's 404 page with HTTP status 200 (Next.js streaming); guests and customers with a fresh cache get a real 404.
+- Verification links re-sent by a sign-in attempt lead to the home page rather than the "email confirmed" page.
+- The Windows visual baselines of the home page predate the header's account link and must be regenerated on the development machine (see DECISIONS).
+- `pnpm audit`: unchanged dev-only `braces` advisory; production dependencies clean.
+- In the cloud environment used for this phase, MinIO's image registry (`cgr.dev`), Cloudflare and Have I Been Pwned were unreachable, so only PostgreSQL and Mailpit ran and the external checks were exercised through test doubles and stubs.
+
+### Next — Phase 4 (Catalog)
+
+Home page (featured, newest, categories), product listing with search, filters and pagination, product and category pages prerendered per locale with `ensureStatic`; cached queries with tags; bilingual fallback; slug and grapheme-length helpers; translated metadata, `hreflang`, sitemap and robots; optimized images.

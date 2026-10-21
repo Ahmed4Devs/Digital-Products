@@ -25,9 +25,15 @@ cp .env.example .env.local
 # 3. Start PostgreSQL 18, Mailpit and MinIO (waits until they are healthy)
 pnpm services:up
 
-# 4. (Playwright only) download the test browser once
+# 4. Create the database tables, then the owner account and default store settings
+pnpm db:migrate
+pnpm db:seed
+
+# 5. (Playwright only) download the test browser once
 pnpm exec playwright install chromium
 ```
+
+`pnpm db:seed` reads the owner's credentials from the `OWNER_*` variables and is safe to re-run: it never changes an existing owner. It checks the password against Have I Been Pwned; on a machine without internet access, run it with `TEST_DOUBLES=on` (local `APP_URL` only).
 
 The first `services:up` creates a **non-superuser** database role (`APP_DB_USER`) that owns three databases: `<APP_DB_NAME>` (development), `<APP_DB_NAME>_shadow` (Prisma migrations) and `<APP_DB_NAME>_test` (automated tests). If you change the database credentials later, recreate the volume: `docker compose --env-file .env.local down -v`.
 
@@ -37,6 +43,23 @@ The first `services:up` creates a **non-superuser** database role (`APP_DB_USER`
 pnpm dev                 # http://localhost:3000
 curl localhost:3000/api/health   # {"status":"ok","checks":{"database":"ok"}}
 ```
+
+- Customers sign up at `/ar/sign-up` (or `/en/sign-up`). Every email (verification, magic link, password reset) lands in Mailpit at http://127.0.0.1:8032.
+- The owner signs in at `/ar/admin/sign-in` with `OWNER_USERNAME` and `OWNER_PASSWORD`. That page is not linked anywhere, and the rest of `/admin` answers 404 to everyone else.
+- Owner locked out? On the server: `pnpm owner:reset-password` sets a new password and signs the owner out everywhere.
+
+## Environment variables
+
+`.env.example` documents every variable. The ones that need a decision:
+
+| Variable                                      | Purpose                                                                                                                                                     |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`                          | Signs cookies and tokens and keys the IP hashes. At least 32 random characters (`openssl rand -base64 32`).                                                 |
+| `MAIL_FROM`, `RESEND_API_KEY` / `MAILPIT_URL` | Sender address; Resend in production (required there), Mailpit locally.                                                                                     |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`  | Cloudflare Turnstile on sign-up. The example file holds Cloudflare's public test keys.                                                                      |
+| `AUTH_IP_HEADERS`, `AUTH_TRUSTED_PROXIES`     | Where the client IP comes from (for rate limits). Behind a reverse proxy, list its addresses in `AUTH_TRUSTED_PROXIES`.                                     |
+| `OWNER_*`                                     | Read only by `pnpm db:seed`.                                                                                                                                |
+| `TEST_DOUBLES`                                | `on` replaces Turnstile and the compromised-password check with local fakes. Refused unless `APP_URL` is a loopback address; tests switch it on themselves. |
 
 ## Local services
 
@@ -66,6 +89,8 @@ All ports listen on `127.0.0.1` only and use project-specific numbers so they do
 | `pnpm test:e2e`                                        | Playwright against a production build on port 3100 (`E2E_DEV=1` uses `next dev`) |
 | `pnpm check`                                           | Format check, lint, typecheck and all Vitest tests                               |
 | `pnpm db:migrate` / `pnpm db:deploy`                   | `prisma migrate dev` (development) / `prisma migrate deploy` (production)        |
+| `pnpm db:seed`                                         | Owner account (from `OWNER_*`) and default store settings; idempotent            |
+| `pnpm owner:reset-password`                            | Offline owner recovery: new password, all owner sessions revoked                 |
 | `pnpm twemoji:sync`                                    | Re-vendor the pinned Twemoji SVG set (checksum-verified)                         |
 | `pnpm db:generate` / `pnpm db:studio`                  | Regenerate the Prisma client / open Prisma Studio                                |
 | `pnpm services:up` / `services:down` / `services:logs` | Manage the Docker services using `.env.local`                                    |
@@ -73,27 +98,41 @@ All ports listen on `127.0.0.1` only and use project-specific numbers so they do
 ## Testing
 
 - **Unit tests** (`tests/unit`) are pure and need no services.
-- **Integration tests** (`tests/integration`) and **E2E tests** (`tests/e2e`) use the separate test database from `DATABASE_URL_TEST`, which is reset before each run. The helpers refuse any database whose name does not end in `_test`.
+- **Integration tests** (`tests/integration`) and **E2E tests** (`tests/e2e`) use the separate test database from `DATABASE_URL_TEST`, which is reset before each run. The helpers refuse any database whose name does not end in `_test`. They also need Mailpit (email is read back from its API) and switch `TEST_DOUBLES` on, so no live service is ever called.
+- E2E tests run against a production build on port 3100 and seed a test owner. If Playwright's bundled browser cannot be downloaded, point it at a local Chromium: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chrome pnpm test:e2e`.
+- Visual baselines are per operating system (`*-win32.png`, `*-linux.png`); refresh yours after intentional visual changes with `pnpm test:e2e --update-snapshots`.
 - A pre-commit hook runs format check, lint, typecheck and unit tests.
 
 ## Project layout
 
 ```text
-app/[locale]/        root layout (lang, dir, font, providers) and localized routes
-  (store)/           storefront shell (header, footer) and pages
+app/[locale]/
+  (store)/           static root layout (lang, dir, font, providers) + storefront pages
+  (secure)/          dynamic root layout for auth pages, account area and admin
+    (auth)/          sign-in, sign-up, forgot/reset password, verify email
+    account/         customer area (guarded by the DAL)
+    admin/           owner sign-in and dashboard (404 for everyone but the owner)
+app/api/auth/        Better Auth handler (rate limits, policy hooks)
 app/api/health/      readiness probe
-proxy.ts             locale negotiation (optimistic only, never a security boundary)
+proxy.ts             locale negotiation and optimistic redirects / 404s (never a security boundary)
 i18n/                routing, navigation helpers, shared formats, request config
 messages/{ar,en}/    translations split by domain (common, store, auth, account, admin, emails)
-components/layout/   root document, header, footer, language and theme switchers
+components/auth/     sign-in, sign-up, magic-link, reset and owner forms (client)
+components/layout/   root document, site shell, header, footer, language and theme switchers
 components/shared/   EmojiText (server-side Twemoji), LtrText (bidi isolation)
-components/ui/       shadcn/ui components (installed by the CLI)
+components/ui/       shadcn/ui components
+emails/              bilingual React Email templates
+lib/auth/            Better Auth config, policy hooks, DAL guards, client, owner CLI logic
+lib/email/           Resend / Mailpit transports and sending
+lib/rate-limit/      PostgreSQL-backed fixed-window limiter
+lib/security/        keyed hashing for IPs and other identifiers
 lib/env/             Zod-validated environment (validated at server start by instrumentation.ts)
 lib/db/              Prisma client (PostgreSQL driver adapter with a pool) and health check
 lib/emoji/           Twemoji parsing (server only)
+scripts/             CLI scripts (owner recovery, Twemoji sync)
 public/twemoji/      vendored Twemoji v17.0.3 SVGs (CC-BY 4.0) — refresh with pnpm twemoji:sync
 eslint-rules/        local rule that forbids physical left/right Tailwind utilities
-prisma/              schema and migrations; prisma.config.ts holds connection settings
+prisma/              schema, migrations and seed; prisma.config.ts holds connection settings
 docker/              init scripts and images for the local services
 tests/               unit/, integration/, e2e/, support/
 docs/                plan, decisions, progress (security and deployment docs come later)
@@ -106,3 +145,4 @@ docs/                plan, decisions, progress (security and deployment docs com
 - **Direction:** use logical Tailwind utilities (`ms-*`, `pe-*`, `inset-s-*`, `text-start`, `border-e`…); ESLint rejects physical ones unless prefixed with `rtl:` / `ltr:`. Wrap emails, order numbers and usernames inside sentences in `<LtrText>`. Flip directional icons with `rtl:-scale-x-100`.
 - **Emoji in content:** render with `<EmojiText>`; keep native emoji in `<title>`, meta tags, inputs and emails.
 - **Links:** import `Link`, `redirect`, `usePathname` and `useRouter` from `@/i18n/navigation`.
+- **Authorization:** read the user through `lib/auth/dal.ts` (`getSessionUser`, `requireCustomer`, `requireVerifiedCustomer`, `requireOwner`) in every page, Server Action and route handler that needs it. Layouts and `proxy.ts` never count as authorization.

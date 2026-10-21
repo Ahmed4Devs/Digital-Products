@@ -65,7 +65,7 @@
 
 ## Phase 3 — Database and Authentication → tag `phase-03-auth`
 
-1. Full Prisma schema (Section 9) with `@default(dbgenerated("uuidv7()")) @db.Uuid` IDs, enums, `@@unique`, indexes, money as `Int` minor units, exchange rate as `Decimal`, JSONB payloads/diffs. Better Auth tables generated with its CLI and reconciled into the schema (never edited by hand afterwards). Includes the §17.5 fields: `Order.userId` nullable (`SetNull`) + `customerEmailSnapshot` + `providerTaxMode` / `providerTaxMinor`; `ProductFile.supersededAt`; `Coupon.reservedCount` / `allowMultiplePerCustomer`; `CouponRedemption` with a partial unique index on `(couponId, userId)` for active rows; `DownloadLog` cascading from `Entitlement`.
+1. Full Prisma schema (Section 9) with `@default(dbgenerated("uuidv7()")) @db.Uuid` IDs, enums, `@@unique`, indexes, money as `Int` minor units, exchange rate as `Decimal`, JSONB payloads/diffs. Better Auth tables written from Better Auth's `getAuthTables()` output and validated by its startup schema check (no CLI dependency). Includes the §17.5 fields: `Order.userId` nullable (`SetNull`) + `customerEmailSnapshot` + `providerTaxMode` / `providerTaxMinor`; `ProductFile.supersededAt`; `Coupon.reservedCount` / `allowMultiplePerCustomer`; `CouponRedemption` with a partial unique index on `(couponId, userId)` for active rows; `DownloadLog` cascading from `Entitlement`.
 2. Initial migration; constraint checks (`CHECK` price ≥ 0 etc.) via migration SQL where Prisma can't express them.
 3. Better Auth server (`lib/auth/server.ts`):
    - Prisma adapter; `emailAndPassword` (`requireEmailVerification`, `minPasswordLength: 8`, `revokeSessionsOnPasswordReset`); compromised-password check.
@@ -80,7 +80,7 @@
 5. Data Access Layer (`lib/auth/dal.ts`, `server-only`): `getSession` (cached per request), `requireCustomer`, `requireVerifiedCustomer`, `requireOwner` (→ `notFound()`), structured so TOTP can be added to the owner later.
 6. Turnstile: client widget on sign-up, server-side `siteverify` with Zod-validated response; test keys in dev.
 7. Email: transport interface → Resend (prod) / Mailpit HTTP send API (dev/test); React Email templates (verification, magic link, reset) in both languages with light, dark-mode-safe styling.
-8. Pages: `(auth)/sign-in`, `sign-up`, `forgot-password`, `reset-password`, `verify-email`; `admin/sign-in` (noindex, not linked); return-to-cart redirect handling via validated `callbackURL` (same-origin, locale-aware).
+8. Pages: `(auth)/sign-in`, `sign-up`, `forgot-password`, `reset-password`, `verify-email`; `admin/sign-in` (noindex, not linked); return-to-cart redirect handling via a validated `next` path (same-origin, locale-aware). Auth pages, account and admin live under a second, dynamic root layout `(secure)` so they have no prerendered shell (prepares the nonce routes of §17.5 §2); `proxy.ts` gives real 307/404 status codes optimistically.
 9. Account & admin layouts verify the session on the server; admin returns 404 for non-owners.
 10. Better Auth error codes → translated messages (`auth` namespace).
 11. Owner seed (`prisma/seed.ts`) from env (`OWNER_USERNAME`, `OWNER_EMAIL`, `OWNER_PASSWORD`, `OWNER_FIRST_NAME`, `OWNER_LAST_NAME`) + default `StoreSetting`; idempotent.

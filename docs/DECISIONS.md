@@ -210,3 +210,135 @@ Minor gaps in the specification are resolved with the most conservative option a
 | `components/ui/dropdown-menu` (shadcn CLI, no new package) | Accessible theme menu                                   |
 
 `next-intl` brings `@swc/core` and `@parcel/watcher` for its optional message extractor (unused); their install scripts are denied in `allowBuilds`.
+
+---
+
+# Phase 3 — Database and Authentication
+
+## 2026-10-21 — Data model conventions
+
+**Decision.** All tables and columns are snake_case (`@@map` / `@map`), every timestamp is `timestamptz(3)`, and IDs default to `uuidv7()`. Rules Prisma cannot express live in the initial migration SQL and are listed next to their models: CHECKs (non-negative money, `total = subtotal − discount + tax`, coupon value ranges, upper-case coupon codes, settings ranges, singleton settings row), partial unique indexes (one owner, one product cover, one active single-use coupon redemption per customer) and the order-number sequence starting at 100001. `prisma migrate diff` confirms the schema and migrations stay in sync.
+
+**Reason.** Spec §9. Database-level guarantees hold even if application code is wrong: there can never be a second owner, a customer with a username, or an order whose total does not add up.
+
+**Details worth knowing.**
+
+- `Order.provider` is null only for zero-total orders (CHECK), which skip the gateway (§17.5 §6).
+- `OrderItem.unitChargedMinor` keeps the line price actually sent to the gateway, so Paddle webhooks can compare line items (§17.5 §3).
+- `Order.couponOvershoot` flags paid orders accepted beyond a coupon's limits (§17.5 §9).
+- `CouponRedemption.singleUse` snapshots `!allowMultiplePerCustomer`, so the partial unique index can enforce "one active redemption per customer" without reading the coupon table.
+- Tax rate is stored in basis points (`1500` = 15 %), never as a float.
+- Images get their own `ProductImage` table (cover + gallery, with dimensions for `next/image`).
+- `RateLimitBucket` backs both Better Auth's limiter and the app's own limits.
+
+## 2026-10-21 — Better Auth tables written by hand, validated by Better Auth
+
+**Decision.** The `User`, `Session`, `Account` and `Verification` models were written from Better Auth's own `getAuthTables()` output instead of adding its CLI. Better Auth 1.7 validates the Prisma data model against its configuration at startup (`database.validateSchema`), and the integration tests run against it. IDs use `advanced.database.generateId: "uuid"`, which on PostgreSQL leaves the column default (`uuidv7()`) in charge.
+
+**Reason.** Fewer dependencies (rule 4); the runtime check catches any drift the CLI would have caught.
+
+## 2026-10-21 — Better Auth version and pnpm's release-age guard
+
+**Decision.** Better Auth `~1.7.12` (latest patch, spec §5.1). When it was added the release was 23 hours old and pnpm 11 added a `minimumReleaseAgeExclude` entry; that entry was removed once the release passed pnpm's 24-hour guard instead of keeping a permanent exception.
+
+## 2026-10-21 — Authentication requests go through the Better Auth handler
+
+**Decision.** Forms call Better Auth's browser client, so every sign-in, sign-up, magic-link and reset request passes through `/api/auth/*`, where Better Auth's rate limiter, origin/CSRF checks, plugins and our policy hook all apply. The `nextCookies()` plugin is installed for Server Actions that call `auth.api` (account settings in Phase 8).
+
+**Reason.** Better Auth only rate-limits HTTP requests; `auth.api` calls from Server Actions would bypass the limiter.
+
+## 2026-10-21 — Policy hook (spec §17.5 §7)
+
+**Decision.** `lib/auth/policy.ts` is the `hooks.before` middleware. Paths were taken from the installed 1.7.12 source (`/sign-up/email`, `/sign-in/email`, `/sign-in/username`, `/sign-in/magic-link`, `/request-password-reset`, `/update-user`; there is no `/forget-password` any more). Every rule has an integration test through the real handler.
+
+- **Sign-up** accepts only `name`, `email`, `password`, `callbackURL`, `rememberMe` and `preferredLocale`; anything else (`role`, `username`, `banned`, `emailVerified`, `image`…) is rejected with `FIELD_NOT_ALLOWED`. The name is always derived from the email.
+- **Email sign-in** of the owner: the password is hashed anyway (same timing) and the response is exactly `INVALID_EMAIL_OR_PASSWORD`.
+- **Username sign-in** of a non-owner returns `INVALID_USERNAME_OR_PASSWORD`. A database CHECK already makes customer usernames impossible.
+- **Magic links** for the owner, banned or unknown accounts get the normal `{ status: true }` answer and no token is created.
+- **`/update-user`** is disabled over HTTP and the hook still rejects protected fields for server-side calls.
+- **Backstop:** `databaseHooks.session.create` refuses sessions for banned users, for the owner on customer paths and for customers on the owner path, and stores the IP address only as a keyed hash.
+
+**Disabled endpoints.** `/is-username-available`, `/update-user`, `/update-session`, `/change-email`, `/delete-user`, `/delete-user/callback`, social sign-in and account-linking routes, `/account-info`, `/refresh-token`, `/get-access-token`. Email change and account deletion arrive with the account page in Phase 8 (deletion must follow §17.5 §5).
+
+## 2026-10-21 — Magic links for unverified customers
+
+**Decision.** An existing, unverified customer may use a magic link; opening it proves control of the address, and Better Auth then marks the email verified and revokes any credential password set before the address was proven.
+
+**Reason.** Equivalent to email verification, and it protects the real owner of an address that someone else pre-registered. Account creation through magic links stays disabled.
+
+## 2026-10-21 — Rate limits
+
+**Decision.** Per IP (Better Auth custom rules): email sign-in 5/min; owner sign-in 5 per 15 min; magic-link requests 3 per 5 min; magic-link verification 10/min; password-reset requests 3 per 15 min; password resets 5 per 15 min; verification resends 3 per 15 min; sign-up 5/hour; password changes 5 per 15 min; everything else 100/min. Per account (policy hook): 10 sign-in attempts per 15 minutes per email or username, across all IPs.
+
+The limiter uses a custom PostgreSQL storage (`lib/rate-limit`): one atomic `INSERT … ON CONFLICT DO UPDATE` per request, keyed by an HMAC of Better Auth's key, so no IP address is stored. Stale buckets are deleted by the maintenance task (Phase 6).
+
+**Client IP.** `AUTH_IP_HEADERS` (default `x-forwarded-for`) and `AUTH_TRUSTED_PROXIES`. Without trusted proxies Better Auth accepts only a single-value header; behind a reverse proxy that appends to `X-Forwarded-For`, list the proxy addresses (documented in `docs/DEPLOYMENT.md` in Phase 10).
+
+**Trade-off.** The per-account limit can be used to lock an account for 15 minutes; it applies to the owner too, who still has the offline recovery script.
+
+## 2026-10-21 — Hashing personal identifiers
+
+**Decision.** `lib/security/keyed-hash.ts` derives a per-purpose HMAC-SHA256 key from `BETTER_AUTH_SECRET`. Session IP addresses and rate-limit keys are stored only as these hashes. Verification identifiers (password-reset tokens) and magic-link tokens are stored hashed by Better Auth (`verification.storeIdentifier: "hashed"`, `storeToken: "hashed"`).
+
+**Reason.** Spec §5.1 (IP addresses only as hashes). Unkeyed SHA-256 of an IPv4 address is reversible by brute force.
+
+## 2026-10-21 — Session cookie cache and fresh reads
+
+**Decision.** Better Auth's signed cookie cache is on (5 minutes, spec §6.3). `getSessionUser()` uses it for display purposes; `requireOwner()` and, from Phase 5 on, every mutation read the session fresh from the database (`disableCookieCache`), so a revoked session (password reset, ban) is refused immediately where it matters.
+
+## 2026-10-21 — Emails: React Email 6 and fetch-based transports
+
+**Decision.** Templates use the `react-email` package. React Email 6 moved all components and `render` into it and deprecated `@react-email/components`. Sending uses two small `fetch` transports: Resend's REST API in production and Mailpit's HTTP send API in development and tests. Emails are sent in the language stored on the account (`preferredLocale`, set from the page language at sign-up) and after the response, so requests for existing and unknown addresses take the same time.
+
+**Reason.** One documented endpoint each does not justify an SDK (rule 4). `react-email` declares its preview CLI's tooling as runtime dependencies; only the components and `render` are imported, so the server bundle stays small.
+
+## 2026-10-21 — Verification flow
+
+**Decision.** `autoSignInAfterVerification: false`. Links sent at sign-up land on `/[locale]/verify-email?status=verified`, which leads to sign-in. Links re-sent by a sign-in attempt land on `/`, because passing a callback URL to sign-in would also redirect successful sign-ins.
+
+## 2026-10-21 — Test doubles for external services (loopback only)
+
+**Decision.** `TEST_DOUBLES=on` replaces Cloudflare Turnstile with a local check of Cloudflare's documented test token and switches off the Have I Been Pwned lookup. The environment schema refuses it unless `APP_URL` is a loopback address, so a deployed server can never enable it. Integration tests also build an auth instance with test doubles off and stub `fetch` to cover the real Turnstile and HIBP plugins. Phase 6 uses the same switch for the fake payment adapter.
+
+**Reason.** Spec §5.3: tests never call live services. Production builds run locally (E2E against `next start`) also need the doubles, so `NODE_ENV` alone cannot be the guard.
+
+## 2026-10-21 — Turnstile site key at request time
+
+**Decision.** `TURNSTILE_SITE_KEY` is a server variable read when the sign-up page renders and passed to the widget, not a `NEXT_PUBLIC_` variable.
+
+**Reason.** It is public by design, but build-time inlining would bake it into the Docker image.
+
+## 2026-10-21 — Owner provisioning and recovery
+
+**Decision.** `pnpm db:seed` creates the singleton settings row and, if no owner exists, the owner from `OWNER_*` variables (idempotent: an existing owner is never changed). `pnpm owner:reset-password` prompts for a new password without echoing it (or reads it from stdin), stores it with Better Auth's `hashPassword` and deletes every owner session. Both check the password against Have I Been Pwned and refuse to continue if the service is unreachable, unless `TEST_DOUBLES=on` on a loopback `APP_URL`.
+
+## 2026-10-21 — Two root layouts and HTTP status codes
+
+**Decision.** `app/[locale]/(store)/layout.tsx` is the static root layout of the storefront. `app/[locale]/(secure)/layout.tsx` is a dynamic root layout (it waits for the request) for authentication pages, the account area and the admin; checkout joins it in Phase 6 and the per-request CSP nonce in Phase 9 (§17.5 §2).
+
+**Status codes.** With Cache Components the server commits to `200` before a guard that awaits the database can run, so the layouts' `notFound()` and `redirect()` render a 404 page (marked `noindex`) or a client-side redirect. Next.js documents proxy as the place for real status codes, so `proxy.ts` answers optimistically: guests are redirected from `/account` and `/checkout` (307), and `/admin` returns a genuine 404 to requests without a session cookie or whose signed session cache shows a non-owner role. The layouts and the DAL remain the security boundary; the proxy only improves status codes.
+
+## 2026-10-21 — Hand-written shadcn/ui inputs
+
+**Decision.** `components/ui/input.tsx`, `label.tsx` and `checkbox.tsx` were written in the base-nova style on Base UI, because the shadcn registry (`ui.shadcn.com`) is not reachable from the build environment. Each file notes it should be kept in sync with `shadcn add`.
+
+## 2026-10-21 — ES modules and CLI scripts
+
+**Decision.** `package.json` declares `"type": "module"`. CLI scripts run with `tsx` (dev dependency), which resolves the `@/` path aliases.
+
+**Reason.** Prisma 7's generated client is an ES module (`import.meta`); Playwright and plain Node otherwise load the test fixtures as CommonJS and fail. Prisma's documentation gives this exact fix.
+
+## 2026-10-21 — Playwright browser and Linux baselines
+
+**Decision.** `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` lets Playwright use a locally installed Chromium when the bundled revision cannot be downloaded. Linux visual baselines (`*-chromium-linux.png`) are committed next to the Windows ones.
+
+**⚠ Owner action.** The header gained the account link, so the Windows home-page baselines from Phase 2 are outdated: regenerate them on the development machine with `pnpm test:e2e --update-snapshots`.
+
+## 2026-10-21 — Dependencies added in Phase 3
+
+| Package                        | Why                                                                           |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| `better-auth`                  | Authentication (spec §4); brings its Prisma adapter, `better-call` and `jose` |
+| `react-email`                  | Email templates and rendering (spec §4)                                       |
+| `tsx` (dev)                    | Runs the TypeScript CLI scripts (`db:seed`, `owner:reset-password`)           |
+| `components/ui/*` (no package) | Input, Label, Checkbox on the already-installed Base UI                       |
