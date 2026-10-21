@@ -93,6 +93,7 @@
     "couponExpired": "انتهت صلاحية هذه القسيمة.",
     "couponMinimum": "طلبك لا يبلغ الحد الأدنى لهذه القسيمة.",
     "couponExhausted": "استُنفدت هذه القسيمة.",
-    "couponAlreadyUsed": "استخدمت هذه القسيمة من قبل."
+    "couponAlreadyUsed": "استخدمت هذه القسيمة من قبل.",
+    "tooManyCouponAttempts": "محاولات كثيرة لإدخال القسائم. حاول مرة أخرى بعد بضع دقائق."
   }
 }

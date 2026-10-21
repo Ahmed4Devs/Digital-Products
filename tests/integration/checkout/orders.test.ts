@@ -1,5 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { placeOrder, quoteCheckout, type PlaceOrderInput } from "@/features/checkout/orders";
+import {
+  COUPON_CHECK_LIMIT,
+  limitCouponChecks,
+  placeOrder,
+  quoteCheckout,
+  type PlaceOrderInput,
+} from "@/features/checkout/orders";
 import { ActionError } from "@/lib/actions";
 import { getDb } from "@/lib/db";
 import { restoreCatalog } from "../../support/catalog-cleanup";
@@ -385,5 +391,17 @@ describe("rate limits", () => {
       }
     }
     expect(refused).toBe(1);
+  });
+
+  it("limits coupon checks per account, so codes cannot be guessed", async () => {
+    const user = await customer();
+    const other = await customer();
+    for (let attempt = 0; attempt < COUPON_CHECK_LIMIT.max; attempt += 1) {
+      await limitCouponChecks(db, deps.secret, user.id);
+    }
+    expect(await rejection(limitCouponChecks(db, deps.secret, user.id))).toBe(
+      "tooManyCouponAttempts",
+    );
+    await expect(limitCouponChecks(db, deps.secret, other.id)).resolves.toBeUndefined();
   });
 });

@@ -20,6 +20,23 @@ export const ORDER_LIMITS = {
   ip: { windowSeconds: 10 * 60, max: 30 },
 } as const;
 
+/** Coupon checks per account, so codes cannot be guessed by trying them one by one. */
+export const COUPON_CHECK_LIMIT = { windowSeconds: 10 * 60, max: 30 } as const;
+
+/** Counts one coupon check for this customer; throws once the limit is reached. */
+export async function limitCouponChecks(
+  db: PrismaClient,
+  secret: string,
+  userId: string,
+): Promise<void> {
+  const { allowed } = await consumeRateLimit(
+    db,
+    keyedHash(secret, "coupon-check", userId),
+    COUPON_CHECK_LIMIT,
+  );
+  if (!allowed) throw new ActionError("tooManyCouponAttempts", "couponCode");
+}
+
 export type PlaceOrderDeps = {
   db: PrismaClient;
   providers: Map<ProviderId, PaymentProvider>;

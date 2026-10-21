@@ -17,7 +17,7 @@ import {
   signFakeWebhook,
 } from "@/lib/payments/fake";
 import { clientIp } from "@/lib/security/client-ip";
-import { placeOrder, quoteCheckout } from "./orders";
+import { limitCouponChecks, placeOrder, quoteCheckout } from "./orders";
 
 // Checkout Server Actions. They re-check the customer themselves (hidden UI is not
 // security) and never trust prices from the browser: everything is recomputed from the
@@ -68,6 +68,7 @@ export async function quoteCheckoutAction(input: {
   try {
     const providerId = providerSchema.parse(input.providerId || null);
     const couponCode = couponSchema.parse(input.couponCode) || null;
+    if (couponCode) await limitCouponChecks(getDb(), serverEnv().BETTER_AUTH_SECRET, user.id);
     const { pricing } = await quoteCheckout(
       { db: getDb(), providers: configuredProviders() },
       { user, productIds: await readCart(), providerId, couponCode },

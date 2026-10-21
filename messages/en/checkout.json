@@ -93,6 +93,7 @@
     "couponExpired": "This coupon has expired.",
     "couponMinimum": "Your order does not reach this coupon's minimum.",
     "couponExhausted": "This coupon has been fully used.",
-    "couponAlreadyUsed": "You have already used this coupon."
+    "couponAlreadyUsed": "You have already used this coupon.",
+    "tooManyCouponAttempts": "Too many coupon attempts. Please try again in a few minutes."
   }
 }
