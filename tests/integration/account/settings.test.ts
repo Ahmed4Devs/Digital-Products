@@ -1,9 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deleteCustomerAccount } from "@/features/account/service";
 import { settleBackgroundTasks } from "@/lib/auth/background";
 import { getAuth } from "@/lib/auth/server";
 import { getDb } from "@/lib/db";
 import { callAuth } from "../../support/auth-client";
+import { restoreCatalog } from "../../support/catalog-cleanup";
 import { createProduct } from "../../support/checkout";
 import { extractLink, listMessages, waitForMessage } from "../../support/mailpit";
 import { createPaidOrder } from "../../support/orders";
@@ -26,6 +27,7 @@ const actions = await import("@/features/account/actions");
 const db = getDb();
 const auth = getAuth();
 const IDLE = { status: "idle" } as const;
+const startedAt = new Date();
 
 function form(fields: Record<string, string>): FormData {
   const data = new FormData();
@@ -45,6 +47,10 @@ beforeEach(() => {
 
 afterEach(async () => {
   await settleBackgroundTasks();
+});
+
+afterAll(async () => {
+  await restoreCatalog(db, startedAt);
 });
 
 describe("access", () => {
