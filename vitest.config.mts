@@ -37,6 +37,9 @@ export default defineConfig({
         "features/**/queries.ts",
       ],
       reporter: ["text", "html", "lcov"],
+      // A floor a little below the current figures (94 % lines), so coverage cannot
+      // quietly erode; raise it as it grows.
+      thresholds: { lines: 90, statements: 88, functions: 90, branches: 78 },
     },
     projects: [
       {
