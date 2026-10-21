@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { readCart, writeCart } from "@/features/cart/server";
+import { queueReceipt } from "@/features/orders/receipt";
 import { actionFailure, type ActionState } from "@/lib/actions";
 import { getSessionUser, type SessionUser } from "@/lib/auth/dal";
 import { getDb } from "@/lib/db";
@@ -45,6 +46,7 @@ function dependencies() {
     providers: configuredProviders(),
     secret: env.BETTER_AUTH_SECRET,
     appUrl: env.APP_URL,
+    onFulfilled: queueReceipt,
   };
 }
 

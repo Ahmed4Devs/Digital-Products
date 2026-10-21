@@ -26,6 +26,8 @@ export type PlaceOrderDeps = {
   secret: string;
   appUrl: string;
   now?: Date;
+  /** Runs after a zero-total order has been fulfilled (the receipt email). */
+  onFulfilled?: (orderId: string) => void;
 };
 
 export type PlaceOrderInput = {
@@ -168,7 +170,10 @@ export async function placeOrder(
     return created;
   });
 
-  if (zeroTotal) return { orderId: order.id, redirectUrl: resultUrl(order.id), zeroTotal: true };
+  if (zeroTotal) {
+    deps.onFulfilled?.(order.id);
+    return { orderId: order.id, redirectUrl: resultUrl(order.id), zeroTotal: true };
+  }
 
   const storeName = localized(input.locale, { ar: settings.storeNameAr, en: settings.storeNameEn });
   try {

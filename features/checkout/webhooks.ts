@@ -112,6 +112,8 @@ export async function handleWebhook(
   db: PrismaClient,
   provider: PaymentProvider,
   request: { rawBody: string; headers: Headers },
+  /** Runs after a fulfilment has committed (the receipt email). */
+  options: { onFulfilled?: (orderId: string) => void } = {},
 ): Promise<WebhookResult> {
   let event;
   try {
@@ -164,5 +166,6 @@ export async function handleWebhook(
     where: { id: eventId },
     data: { processedAt: new Date(), outcome: result.outcome, orderId: result.orderId },
   });
+  if (result.outcome === "fulfilled" && result.orderId) options.onFulfilled?.(result.orderId);
   return { status: 200, outcome: result.outcome };
 }

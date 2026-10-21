@@ -1,4 +1,5 @@
 import { handleWebhook } from "@/features/checkout/webhooks";
+import { queueReceipt } from "@/features/orders/receipt";
 import { getDb } from "@/lib/db";
 import { configuredProviders } from "@/lib/payments";
 import type { ProviderId } from "@/lib/payments/types";
@@ -21,7 +22,12 @@ export async function POST(request: Request, { params }: RouteContext<"/api/webh
     return Response.json({ error: "too_large" }, { status: 413 });
 
   try {
-    const result = await handleWebhook(getDb(), provider, { rawBody, headers: request.headers });
+    const result = await handleWebhook(
+      getDb(),
+      provider,
+      { rawBody, headers: request.headers },
+      { onFulfilled: queueReceipt },
+    );
     return Response.json(
       { received: result.status === 200, outcome: result.outcome },
       { status: result.status },
