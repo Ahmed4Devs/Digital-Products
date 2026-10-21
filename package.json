@@ -26,6 +26,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "owner:reset-password": "tsx scripts/owner-reset-password.ts",
     "db:studio": "prisma studio",
     "twemoji:sync": "node scripts/sync-twemoji.mjs",
     "services:up": "docker compose --env-file .env.local up -d --build --wait",
