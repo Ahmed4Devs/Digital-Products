@@ -3,9 +3,19 @@ import { randomUUID } from "node:crypto";
 // What the owner may upload and where it is stored (spec §5.1, §10.6, §17.5 §8). Pure
 // functions, so the rules are unit-tested without a storage server.
 
-export type UploadPurpose = "file" | "cover" | "gallery";
+export type UploadPurpose = "file" | "cover" | "gallery" | "logoLight" | "logoDark";
 
-export const UPLOAD_PURPOSES = ["file", "cover", "gallery"] as const satisfies UploadPurpose[];
+export const PRODUCT_UPLOAD_PURPOSES = [
+  "file",
+  "cover",
+  "gallery",
+] as const satisfies UploadPurpose[];
+export const LOGO_UPLOAD_PURPOSES = ["logoLight", "logoDark"] as const satisfies UploadPurpose[];
+export const UPLOAD_PURPOSES = [...PRODUCT_UPLOAD_PURPOSES, ...LOGO_UPLOAD_PURPOSES] as const;
+
+export function isLogoPurpose(purpose: UploadPurpose): purpose is "logoLight" | "logoDark" {
+  return purpose === "logoLight" || purpose === "logoDark";
+}
 
 /** Product images (cover and gallery): small enough to optimize on the fly. */
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -89,6 +99,8 @@ export const ACCEPTED_EXTENSIONS: Record<UploadPurpose, string[]> = {
   file: Object.keys(FILE_TYPES),
   cover: Object.keys(IMAGE_TYPES),
   gallery: Object.keys(IMAGE_TYPES),
+  logoLight: Object.keys(IMAGE_TYPES),
+  logoDark: Object.keys(IMAGE_TYPES),
 };
 
 export function isImagePurpose(purpose: UploadPurpose): boolean {
@@ -212,6 +224,11 @@ export function productFileKey(productId: string): string {
 /** Final key of a product image in the public bucket. */
 export function productImageKey(productId: string, extension: string): string {
   return `products/${productId}/images/${randomUUID()}.${extension}`;
+}
+
+/** Final key of a store logo in the public bucket. */
+export function logoKey(extension: string): string {
+  return `branding/${randomUUID()}.${extension}`;
 }
 
 // ── Display file names ──────────────────────────────────────────────────────────────

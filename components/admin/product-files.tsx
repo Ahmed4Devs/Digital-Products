@@ -63,7 +63,12 @@ export function ProductFiles({ productId, files }: { productId: string; files: A
   const disabled = busy || removing;
 
   async function onFile(file: File, replacesFileId: string | null = null) {
-    const result = await upload(file, { productId, purpose: "file", replacesFileId });
+    const result = await upload(file, {
+      kind: "product",
+      productId,
+      purpose: "file",
+      replacesFileId,
+    });
     setState(result);
     if (result.status === "success") router.refresh();
   }

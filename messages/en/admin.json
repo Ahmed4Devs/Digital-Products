@@ -222,7 +222,11 @@
     "notConfigured": "Not configured: set its environment variables on the server.",
     "moyasar": "Moyasar (SAR: mada, cards, Apple Pay, STC Pay)",
     "paddle": "Paddle (USD, international cards, merchant of record)",
-    "paypal": "PayPal (USD)"
+    "paypal": "PayPal (USD)",
+    "store": "Store",
+    "logos": "Logos",
+    "legal": "Legal pages",
+    "legalHint": "Shown on the store's terms, privacy, refund policy, about and contact pages. Empty pages show a placeholder."
   },
   "errors": {
     "invalid": "Please check the highlighted fields.",
@@ -251,7 +255,7 @@
     "uploadMismatch": "The stored file does not match what was uploaded. Please try again.",
     "signatureMismatch": "The file's content does not match its type.",
     "invalidImage": "This is not a valid image of the chosen type.",
-    "imageTooSmall": "Images must be at least 100 pixels on each side.",
+    "imageTooSmall": "This image is smaller than the minimum size.",
     "imageTooLarge": "Images must be at most 10,000 pixels on each side.",
     "galleryFull": "The gallery is full. Remove an image first.",
     "uploadFailed": "The upload failed. Please try again.",
@@ -267,7 +271,11 @@
     "couponCodeTaken": "This code is already in use.",
     "invalidCouponPercent": "Enter a whole number from 1 to 100.",
     "invalidDate": "Enter a valid date and time.",
-    "endsBeforeStarts": "Must be after the start."
+    "endsBeforeStarts": "Must be after the start.",
+    "invalidPercent": "Enter a percentage from 0 to 100 with at most 2 decimals.",
+    "outOfRange": "This number is out of the allowed range.",
+    "invalidEmail": "Enter a valid email address.",
+    "taxRateRequired": "Enter a tax rate above 0, or turn tax off."
   },
   "notices": {
     "productCreated": "Product created.",
@@ -295,7 +303,9 @@
     "couponCreated": "Coupon created.",
     "couponSaved": "Coupon saved.",
     "couponActivated": "Coupon activated.",
-    "couponDeactivated": "Coupon deactivated."
+    "couponDeactivated": "Coupon deactivated.",
+    "logoAdded": "Logo saved.",
+    "logoRemoved": "Logo removed."
   },
   "pagination": {
     "label": "Pages",
@@ -625,5 +635,48 @@
         "update": "Settings changed"
       }
     }
+  },
+  "storeSettings": {
+    "details": "Store details",
+    "storeNameAr": "Store name (Arabic)",
+    "storeNameEn": "Store name (English)",
+    "supportEmail": "Support email",
+    "supportEmailHint": "Optional. Shown to customers who need help.",
+    "tax": "Tax",
+    "taxHint": "Off by default. When on, the rate is added at checkout for Moyasar and PayPal; Paddle charges its own tax.",
+    "taxEnabled": "Charge tax",
+    "taxRate": "Tax rate (%)",
+    "taxRateHint": "For example 15.",
+    "vatNumber": "VAT number",
+    "vatNumberHint": "Optional.",
+    "limits": "Limits",
+    "downloadsPerMinute": "Downloads per minute",
+    "downloadsPerMinuteHint": "Per customer, from 1 to 1,000.",
+    "pendingOrderTtl": "Unpaid orders expire after (minutes)",
+    "pendingOrderTtlHint": "From 5 to 10,080 (one week). Expired orders release their coupon.",
+    "save": "Save"
+  },
+  "logos": {
+    "hint": "PNG, JPEG, WebP or AVIF, up to {size}. Without a logo the store shows its name.",
+    "light": "Logo for light theme",
+    "dark": "Logo for dark theme",
+    "preview": "{variant} preview",
+    "none": "No logo",
+    "upload": "Upload logo",
+    "replace": "Replace logo",
+    "remove": "Remove logo"
+  },
+  "legal": {
+    "pagesLabel": "Legal pages",
+    "pages": {
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "refundPolicy": "Refund policy",
+      "about": "About",
+      "contact": "Contact"
+    },
+    "arabic": "{page} (Arabic)",
+    "english": "{page} (English)",
+    "save": "Save page"
   }
 }

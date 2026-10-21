@@ -18,7 +18,7 @@ import {
   resolveUploadType,
   sanitizeFileName,
   SIGNATURE_BYTES,
-  UPLOAD_PURPOSES,
+  PRODUCT_UPLOAD_PURPOSES,
 } from "@/lib/storage/policy";
 import {
   signUploadTicket,
@@ -36,7 +36,7 @@ export const MAX_GALLERY_IMAGES = 8;
 
 export const uploadRequestSchema = z.strictObject({
   productId: z.uuid(),
-  purpose: z.enum(UPLOAD_PURPOSES),
+  purpose: z.enum(PRODUCT_UPLOAD_PURPOSES),
   fileName: z.string().trim().min(1).max(255),
   sizeBytes: z.number().int(),
   replacesFileId: z.uuid().nullable().default(null),
@@ -112,6 +112,7 @@ const IMAGE_SIZE_TYPES: Record<string, string> = {
 export function inspectImage(
   bytes: Uint8Array,
   expectedMimeType: string,
+  limits: { minSide: number } = { minSide: MIN_IMAGE_SIDE },
 ): { width: number; height: number } {
   let size: ReturnType<typeof imageSize>;
   try {
@@ -127,7 +128,7 @@ export function inspectImage(
   const width = rotated ? size.height : size.width;
   const height = rotated ? size.width : size.height;
   const sides = [width, height];
-  if (sides.some((side) => side < MIN_IMAGE_SIDE)) throw new ActionError("imageTooSmall");
+  if (sides.some((side) => side < limits.minSide)) throw new ActionError("imageTooSmall");
   if (sides.some((side) => side > MAX_IMAGE_SIDE)) throw new ActionError("imageTooLarge");
   return { width, height };
 }
@@ -137,6 +138,8 @@ export const confirmUploadSchema = z.strictObject({
   altAr: z.string().trim().max(200).default(""),
   altEn: z.string().trim().max(200).default(""),
 });
+
+type ProductTicket = UploadTicket & { productId: string };
 
 export type ConfirmedUpload =
   | { kind: "image"; id: string; productId: string }
@@ -151,8 +154,11 @@ export async function confirmUpload(
   now: Date = new Date(),
 ): Promise<ConfirmedUpload> {
   const input = confirmUploadSchema.parse(confirmation);
-  const ticket = verifyUploadTicket(secret, input.token, now);
-  if (!ticket) throw new ActionError("uploadExpired");
+  const verified = verifyUploadTicket(secret, input.token, now);
+  if (!verified) throw new ActionError("uploadExpired");
+  // Logo tickets are confirmed by features/settings/logos.ts, never here.
+  if (verified.productId === null) throw new ActionError("invalid");
+  const ticket: ProductTicket = { ...verified, productId: verified.productId };
 
   const stored = await storage.head("private", ticket.key);
   if (!stored) throw new ActionError("uploadMissing");
@@ -222,7 +228,7 @@ export async function confirmUpload(
 async function saveImage(
   db: PrismaClient,
   actorId: string,
-  ticket: UploadTicket,
+  ticket: ProductTicket,
   image: { storageKey: string; width: number; height: number; altAr: string; altEn: string },
 ): Promise<{ id: string; replacedKey: string | null }> {
   return db.$transaction(async (tx) => {
@@ -277,7 +283,7 @@ async function saveImage(
 async function saveFile(
   db: PrismaClient,
   actorId: string,
-  ticket: UploadTicket,
+  ticket: ProductTicket,
   file: { storageKey: string; sizeBytes: number; checksum: string; mimeType: string },
 ): Promise<string> {
   return db.$transaction(async (tx) => {

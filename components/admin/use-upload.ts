@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { confirmUploadAction, requestUploadAction } from "@/features/products/actions";
+import { confirmLogoUploadAction, requestLogoUploadAction } from "@/features/settings/actions";
 import type { ActionState } from "@/lib/actions";
-import type { UploadPurpose } from "@/lib/storage/policy";
 
 export type UploadPhase =
   | { kind: "idle" }
@@ -11,11 +11,14 @@ export type UploadPhase =
   | { kind: "verifying" }
   | { kind: "done"; state: ActionState };
 
-type UploadTarget = {
-  productId: string;
-  purpose: UploadPurpose;
-  replacesFileId?: string | null;
-};
+export type UploadTarget =
+  | {
+      kind: "product";
+      productId: string;
+      purpose: "file" | "cover" | "gallery";
+      replacesFileId?: string | null;
+    }
+  | { kind: "logo"; variant: "light" | "dark" };
 
 /** PUT to the pre-signed URL with progress; XHR because fetch cannot report upload progress. */
 function put(url: string, file: File, contentType: string, onProgress: (percent: number) => void) {
@@ -50,13 +53,20 @@ export function useUpload() {
       return state;
     };
 
-    const issued = await requestUploadAction({
-      productId: target.productId,
-      purpose: target.purpose,
-      fileName: file.name,
-      sizeBytes: file.size,
-      replacesFileId: target.replacesFileId ?? null,
-    });
+    const issued =
+      target.kind === "product"
+        ? await requestUploadAction({
+            productId: target.productId,
+            purpose: target.purpose,
+            fileName: file.name,
+            sizeBytes: file.size,
+            replacesFileId: target.replacesFileId ?? null,
+          })
+        : await requestLogoUploadAction({
+            variant: target.variant,
+            fileName: file.name,
+            sizeBytes: file.size,
+          });
     if (issued.status !== "success" || !issued.upload) return finish(issued);
 
     const stored = await put(issued.upload.url, file, issued.upload.contentType, (progress) =>
@@ -65,7 +75,11 @@ export function useUpload() {
     if (!stored) return finish({ status: "error", message: "uploadFailed" });
 
     setPhase({ kind: "verifying" });
-    return finish(await confirmUploadAction({ token: issued.upload.token, ...details }));
+    return finish(
+      target.kind === "product"
+        ? await confirmUploadAction({ token: issued.upload.token, ...details })
+        : await confirmLogoUploadAction({ token: issued.upload.token }),
+    );
   }
 
   const busy = phase.kind === "uploading" || phase.kind === "verifying";

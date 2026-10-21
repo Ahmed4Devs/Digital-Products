@@ -60,7 +60,7 @@ export function ProductMedia({ productId, title, cover, gallery, maxGallery }: P
   const [altEn, setAltEn] = useState("");
 
   async function onFile(file: File, purpose: "cover" | "gallery") {
-    const result = await upload(file, { productId, purpose }, { altAr, altEn });
+    const result = await upload(file, { kind: "product", productId, purpose }, { altAr, altEn });
     setState(result);
     if (result.status === "success") {
       setAltAr("");
