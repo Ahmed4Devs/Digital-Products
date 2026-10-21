@@ -1,0 +1,26 @@
+# Only what the image needs. Secrets come in as build secrets, never in the context.
+.git
+.github
+.env
+.env.*
+!.env.example
+!.env.production.example
+node_modules
+.next
+generated
+coverage
+test-results
+playwright-report
+blob-report
+tests
+context
+docs
+*.md
+tsconfig.tsbuildinfo
+docker-compose.yml
+Dockerfile
+.dockerignore
+docker/minio
+docker/postgres
+playwright.config.ts
+vitest.config.mts
