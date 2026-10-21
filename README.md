@@ -49,6 +49,7 @@ curl localhost:3000/api/health   # {"status":"ok","checks":{"database":"ok"}}
 - The catalog lives at `/ar` and `/en`, `/[locale]/products`, `/[locale]/products/[slug]` and `/[locale]/categories/[slug]`; `/sitemap.xml` and `/robots.txt` are generated.
 - Customers sign up at `/ar/sign-up` (or `/en/sign-up`). Every email (verification, magic link, password reset) lands in Mailpit at http://127.0.0.1:8032.
 - The owner signs in at `/ar/admin/sign-in` with `OWNER_USERNAME` and `OWNER_PASSWORD`. That page is not linked anywhere, and the rest of `/admin` answers 404 to everyone else.
+- Customers add products to the cart, check out (signed in, email verified), apply a coupon, and pay through an enabled gateway; free products are claimed with "Get it free". Paid products appear in My Purchases (`/[locale]/account/library`).
 - In the dashboard (`/ar/admin`) the owner creates products (Arabic/English tabs, rich-text description, USD price, optional fixed SAR and compare-at prices), uploads the cover, gallery and downloadable files, previews and publishes them, manages categories and sets the USD → SAR rate. Published changes appear in the store on the next request.
 - Owner locked out? On the server: `pnpm owner:reset-password` sets a new password and signs the owner out everywhere.
 
@@ -83,24 +84,25 @@ All ports listen on `127.0.0.1` only and use project-specific numbers so they do
 
 ## Scripts
 
-| Script                                                 | What it does                                                                     |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| `pnpm dev` / `pnpm build` / `pnpm start`               | Next.js development server, production build, production server                  |
-| `pnpm lint`                                            | ESLint with zero warnings allowed                                                |
-| `pnpm typecheck`                                       | Generates route types, then runs `tsc`                                           |
-| `pnpm format` / `pnpm format:check`                    | Prettier                                                                         |
-| `pnpm test`                                            | All Vitest projects (unit + integration)                                         |
-| `pnpm test:unit` / `pnpm test:integration`             | One Vitest project                                                               |
-| `pnpm test:coverage`                                   | Vitest with V8 coverage (`coverage/`)                                            |
-| `pnpm test:e2e`                                        | Playwright against a production build on port 3100 (`E2E_DEV=1` uses `next dev`) |
-| `pnpm check`                                           | Format check, lint, typecheck and all Vitest tests                               |
-| `pnpm db:migrate` / `pnpm db:deploy`                   | `prisma migrate dev` (development) / `prisma migrate deploy` (production)        |
-| `pnpm db:seed`                                         | Owner account (from `OWNER_*`) and default store settings; idempotent            |
-| `pnpm db:seed:demo`                                    | Bilingual demo catalog for local development (refused unless `APP_URL` is local) |
-| `pnpm owner:reset-password`                            | Offline owner recovery: new password, all owner sessions revoked                 |
-| `pnpm twemoji:sync`                                    | Re-vendor the pinned Twemoji SVG set (checksum-verified)                         |
-| `pnpm db:generate` / `pnpm db:studio`                  | Regenerate the Prisma client / open Prisma Studio                                |
-| `pnpm services:up` / `services:down` / `services:logs` | Manage the Docker services using `.env.local`                                    |
+| Script                                                 | What it does                                                                                                         |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev` / `pnpm build` / `pnpm start`               | Next.js development server, production build, production server                                                      |
+| `pnpm lint`                                            | ESLint with zero warnings allowed                                                                                    |
+| `pnpm typecheck`                                       | Generates route types, then runs `tsc`                                                                               |
+| `pnpm format` / `pnpm format:check`                    | Prettier                                                                                                             |
+| `pnpm test`                                            | All Vitest projects (unit + integration)                                                                             |
+| `pnpm test:unit` / `pnpm test:integration`             | One Vitest project                                                                                                   |
+| `pnpm test:coverage`                                   | Vitest with V8 coverage (`coverage/`)                                                                                |
+| `pnpm test:e2e`                                        | Playwright against a production build on port 3100 (`E2E_DEV=1` uses `next dev`)                                     |
+| `pnpm check`                                           | Format check, lint, typecheck and all Vitest tests                                                                   |
+| `pnpm db:migrate` / `pnpm db:deploy`                   | `prisma migrate dev` (development) / `prisma migrate deploy` (production)                                            |
+| `pnpm db:seed`                                         | Owner account (from `OWNER_*`) and default store settings; idempotent                                                |
+| `pnpm db:seed:demo`                                    | Bilingual demo catalog for local development (refused unless `APP_URL` is local)                                     |
+| `pnpm owner:reset-password`                            | Offline owner recovery: new password, all owner sessions revoked                                                     |
+| `pnpm maintenance:run`                                 | Daily housekeeping: expire unpaid orders, release coupon reservations, delete expired tokens and unconfirmed uploads |
+| `pnpm twemoji:sync`                                    | Re-vendor the pinned Twemoji SVG set (checksum-verified)                                                             |
+| `pnpm db:generate` / `pnpm db:studio`                  | Regenerate the Prisma client / open Prisma Studio                                                                    |
+| `pnpm services:up` / `services:down` / `services:logs` | Manage the Docker services using `.env.local`                                                                        |
 
 ## Testing
 
@@ -117,13 +119,16 @@ All ports listen on `127.0.0.1` only and use project-specific numbers so they do
 ```text
 app/[locale]/
   (store)/           static root layout (lang, dir, font, providers) + storefront pages:
-                     home, products (search), products/[slug], categories/[slug]
+                     home, products (search), products/[slug], categories/[slug], cart
   (secure)/          dynamic root layout for auth pages, account area and admin
     (auth)/          sign-in, sign-up, forgot/reset password, verify email
-    account/         customer area (guarded by the DAL)
+    account/         customer area (guarded by the DAL): overview, library (My Purchases)
+    checkout/        checkout, result (polling), paddle (Paddle.js), fake (tests only)
     admin/           owner sign-in and dashboard (404 for everyone but the owner):
                      overview, products (list, new, [id], [id]/preview), categories, settings
 app/api/auth/        Better Auth handler (rate limits, policy hooks)
+app/api/webhooks/    one webhook endpoint per payment gateway ([provider])
+app/api/orders/      order status for the checkout result page
 app/api/health/      readiness probe
 app/sitemap.ts       /sitemap.xml (both languages, hreflang alternates)
 app/robots.ts        /robots.txt
@@ -139,19 +144,23 @@ components/shared/   EmojiText (server-side Twemoji), LtrText (bidi isolation), 
                      MoneyText, RichText (sanitized)
 components/ui/       shadcn/ui components
 emails/              bilingual React Email templates
-features/            products, categories, settings: data.ts (Prisma reads), queries.ts
+features/            cart (signed cookie), checkout (coupons, order placement, fulfilment,
+                     webhooks), library, maintenance;
+                     products, categories, settings: data.ts (Prisma reads), queries.ts
                      ('use cache' + tags), schemas.ts (Zod), service.ts (audited owner writes),
                      actions.ts (Server Actions: owner check → Zod → service → updateTag);
                      products/uploads.ts (pre-signed uploads, storage verification, versions)
 lib/auth/            Better Auth config, policy hooks, DAL guards, client, owner CLI logic
 lib/email/           Resend / Mailpit transports and sending
 lib/rate-limit/      PostgreSQL-backed fixed-window limiter
+lib/payments/        PaymentProvider interface; Moyasar, Paddle, PayPal and test-only fake adapters
 lib/storage/         S3 client (MinIO / R2), upload policy (types, sizes, signatures, keys,
                      file names) and signed upload tickets
 lib/audit/           AuditLog rows with before/after diffs
 lib/actions/         Server Action result shape and error mapping
-lib/security/        keyed hashing for IPs and other identifiers
-lib/money/           integer money math: USD→SAR (round half up), fixed SAR prices
+lib/security/        keyed hashing, constant-time comparison, client IP resolution
+lib/money/           integer money math: USD→SAR (round half up), fixed SAR prices, order
+                     pricing (coupons, store tax, discount allocation)
 lib/text/            slugs, grapheme lengths, bilingual fallback
 lib/rich-text/       allowlist sanitizer and render-side Twemoji
 lib/seo/             metadata, canonical and hreflang helpers
@@ -164,7 +173,7 @@ eslint-rules/        local rule that forbids physical left/right Tailwind utilit
 prisma/              schema, migrations and seed; prisma.config.ts holds connection settings
 docker/              init scripts and images for the local services
 tests/               unit/, integration/, e2e/, support/
-docs/                plan, decisions, progress (security and deployment docs come later)
+docs/                plan, decisions, progress, sandbox testing (security and deployment docs come later)
 ```
 
 ## Conventions

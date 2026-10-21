@@ -472,3 +472,48 @@ The emoji picker is a curated set of 80 single emoji whose grid is loaded on fir
 | `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit`  | Admin-only rich-text editor, lazy-loaded                                                     |
 
 All are actively maintained; versions were checked with `npm view` and pinned by the lockfile.
+
+## 2026-10-21 — Payment gateways without SDKs
+
+**Decision.** One `PaymentProvider` interface (`lib/payments/types.ts`: create payment, verify webhook, fetch payment, refund, plus an optional capture) with fetch-based adapters for Moyasar, Paddle Billing and PayPal Orders v2, and a test-only fake adapter. No gateway SDKs: the four operations each need a handful of documented REST calls, and the SDKs would add dependencies and hide the exact requests. Request and webhook shapes were checked against each provider's current documentation. Provider errors never include response bodies (they can echo customer data).
+
+- **Moyasar (SAR):** a hosted **invoice** per order (`metadata.order_id`, success/back URLs). Webhooks registered in the dashboard carry a `secret_token`, compared in constant time and dropped from the stored payload; the payment is then re-fetched with the secret key and linked to the order through its `invoice_id`. A failed attempt is not final (the customer can retry on the same invoice), so only paid and refunded payments change an order.
+- **Paddle (USD):** one transaction per order with non-catalog prices, `custom_data.order_id`, and `tax_mode` set explicitly on every item (`PADDLE_TAX_MODE`, default `internal`); the order records the mode. Webhooks: `Paddle-Signature` (`ts=…;h1=…`, several `h1` accepted during secret rotation) is an HMAC-SHA256 of `ts:rawBody`, with a 5-minute clock tolerance. Matching compares the line-item unit prices the store sent, independent of tax; Paddle's tax and grand total are recorded separately (§17.5 §3). Refunds are full adjustments, approved later by Paddle. The customer pays on the store's `/checkout/paddle` page (Paddle's "default payment link"), which opens Paddle.js for the transaction with the email prefilled.
+- **PayPal (USD):** Orders v2 with `PayPal-Request-Id` idempotency keys, digital-goods items, no shipping. Webhooks are verified through PayPal's verify-webhook-signature API, posting the raw event bytes back unchanged; the certificate URL must be on paypal.com. The approved order is captured when the customer returns (a POST from the result page) or on `CHECKOUT.ORDER.APPROVED`; only `PAYMENT.CAPTURE.COMPLETED`, re-fetched and matched, fulfils it.
+- **Fake (tests only):** exists only with `TEST_DOUBLES=on` (loopback only). Its references and payment tokens are HMAC-signed and stateless; a page in the app plays the hosted checkout and sends signed webhooks to the real webhook route, so E2E tests exercise verification, idempotency, re-fetching and matching exactly as in production.
+
+## 2026-10-21 — Webhook processing
+
+**Decision.** `/api/webhooks/[provider]` reads the raw body (256 KiB cap), verifies it (401 otherwise, nothing recorded), then records the event under the unique `(provider, providerEventId)`. A processed event is answered `200 duplicate`; an event whose processing failed (for example the provider API was down, answered with 500) is processed again on the provider's retry. Processing re-fetches the payment from the provider, finds the order by `(provider, providerReference)`, locks its row (`SELECT … FOR UPDATE`) so concurrent deliveries queue up, checks the echoed order id, currency and amount (Paddle: line items), and applies the state in one transaction: fulfil, record a refund, or fail a pending order. Mismatches leave the order unchanged and are recorded in the new `payment_events.outcome` column for the owner. A payment that arrives after the order expired or failed is still fulfilled: the money arrived.
+
+## 2026-10-21 — Pricing, coupons and zero-total orders
+
+**Decision.** `lib/money/order.ts` prices an order in integer minor units: USD totals for the record; the charged amount in USD (Paddle, PayPal) or SAR (Moyasar). SAR lines use the owner's fixed price or the converted one, and a coupon applies to the SAR subtotal directly (a fixed coupon's USD value is converted), so the customer pays exactly the SAR prices the store showed. The discount is spread over the lines by largest remainder, so line prices sent to gateways always add up to the charged amount. Store tax (off by default) is applied after the discount, never for Paddle. Percent discounts and tax round half up.
+
+Coupon reservations follow §17.5 §9 exactly: a conditional `UPDATE … WHERE used_count + reserved_count < usage_limit` and a `reserved` redemption in the order transaction (the partial unique index backs the one-use-per-customer rule), redemption at fulfilment, release on failure or expiry, and an overshoot flag instead of a rejection when a paid order's reservation is gone. A test runs six concurrent checkouts against a two-use coupon.
+
+Zero total is decided on the USD total (§17.5 §6): such orders get no provider and are fulfilled inside the creation transaction, under the same rate limits and ownership checks. A free product cannot have a fixed SAR price (form validation), so USD and SAR agree on what is free. Gateway minimums are enforced before creating an order (Moyasar: 1 SAR).
+
+## 2026-10-21 — Order-creation limits and client IPs
+
+**Decision.** 10 orders per 10 minutes per account and 30 per IP, in the PostgreSQL limiter under keyed hashes. The client IP is resolved like Better Auth's limiter (`AUTH_IP_HEADERS`, `AUTH_TRUSTED_PROXIES`; `lib/security/client-ip.ts`). When no trustworthy IP can be resolved, the per-IP limit is skipped rather than putting every customer in one shared bucket; the per-account limit still applies.
+
+## 2026-10-21 — Signed cart cookie
+
+**Decision.** The cart cookie holds product IDs only (`id_id_….hmac`, at most 20, deduplicated), signed with a key derived from `BETTER_AUTH_SECRET`. It is **not** `HttpOnly`: the header shows the count from it in the browser so storefront pages stay static, and it contains nothing secret. The server verifies the signature, re-validates every ID and recomputes every price; a tampered cookie reads as an empty cart. Products already owned are left out at checkout; a paid order's products are removed from the cart by the result page.
+
+## 2026-10-21 — Checkout flow and pages
+
+**Decision.** The cart (`/[locale]/cart`) is a static shell with its contents streamed from the cookie. Checkout, the result page, the fake gateway page and the Paddle page live under the dynamic `(secure)` root, guarded by the layout (real redirects to sign-in with `next=/checkout`) and by every page and action. Checkout actions cannot read the URL locale (`next/root-params` is unavailable in Server Actions), so the form sends it and it is validated. The result page polls `/api/orders/[id]/status` (owner-only, `no-store`) every two seconds for up to two minutes and never changes the order; once paid it opens My Purchases. "Get it free" on free products places a zero-total order directly.
+
+## 2026-10-21 — Gateway availability
+
+**Decision.** A gateway is offered at checkout only when all its environment variables are set (validated all-or-nothing at startup) and the owner enabled it in the dashboard settings (the toggles are part of Phase 6 because checkout needs them; the remaining settings arrive in Phase 8).
+
+## 2026-10-21 — Scheduled maintenance
+
+**Decision.** `pnpm maintenance:run` (`features/maintenance/run.ts`, idempotent) expires pending orders older than `pendingOrderTtlMinutes` and releases their reservations, releases any orphaned expired reservation, deletes expired verification tokens, rate-limit buckets older than a day and unconfirmed uploads under `pending/` older than 24 hours. It is meant to run daily as a scheduled task inside the app container (Phase 10 documents it); there is no public endpoint.
+
+## 2026-10-21 — Sandbox runs
+
+**Decision.** `docs/SANDBOX_TESTING.md` describes the manual runs through a tunnel for all three gateways. They could not be performed in this environment (no sandbox credentials and no access to the gateways' networks); the automated suite covers the same paths with stubbed provider APIs and the fake gateway.

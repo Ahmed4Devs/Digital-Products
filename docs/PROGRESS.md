@@ -268,3 +268,56 @@ pnpm dev            # sign in at /ar/admin/sign-in, then /ar/admin/products/new
 ### Next — Phase 6 (Cart, Checkout and Payments)
 
 Signed cart cookie; checkout with the sign-in gate, coupons with reservations and server-side pricing; order creation with rate limits; the `PaymentProvider` interface with Moyasar, Paddle, PayPal and the test-only fake adapter; webhooks with signature verification, idempotency and amount/currency matching; the result page with polling; `pnpm maintenance:run`.
+
+## Phase 6 — Cart, Checkout and Payments ✅ (tag `phase-06-checkout`)
+
+**Completed:** 2026-10-21
+
+### Built
+
+- **Cart:** HMAC-signed cookie with product IDs only (max 20), "Add to cart" on product pages, a header count resolved in the browser (catalog pages stay static), and a cart page that streams its contents into a static shell.
+- **Checkout** (`/[locale]/checkout`): signed-in, verified customers only (guests return to checkout after signing in); products already owned are left out; coupon field; choice among the gateways that are configured and enabled; every total recomputed on the server.
+- **Pricing (`lib/money/order.ts`):** USD totals for the record, the charge in USD or SAR (fixed SAR prices respected, coupon applied to the SAR subtotal), discounts spread over lines exactly, optional store tax after the discount and never for Paddle, round half up everywhere.
+- **Coupons (§17.5 §9):** validation (active, window, minimum, limit, one use per customer), conditional reservations in the order transaction, redemption at fulfilment, release on failure or expiry, overshoot flag instead of rejecting a paid order.
+- **Orders:** item and exchange-rate snapshots, 10 per 10 minutes per account and 30 per IP, gateway minimums, the payment created after the order commits (the order fails and the coupon is released if the gateway is down). Zero-total orders (free products via "Get it free", 100 % coupons) skip the gateway and are fulfilled in the same transaction (§17.5 §6).
+- **Gateways (`lib/payments`):** one `PaymentProvider` interface; Moyasar (SAR invoices, shared-secret webhooks), Paddle Billing (USD, explicit tax mode per item, `Paddle-Signature`, line-item matching, tax and charged amount recorded; Paddle.js page as the default payment link), PayPal Orders v2 (USD, verify-webhook-signature API with the raw event, capture on return or approval webhook), and a stateless, signed fake gateway for tests only. No SDKs.
+- **Webhooks** (`/api/webhooks/[provider]`): raw body, signature verification, idempotency by provider event ID, re-fetch from the provider, order lock, currency/amount (or line-item) matching, then fulfilment (paid + entitlement upserts + coupon redemption), refund (revocation) or failure in one transaction. Every delivery's outcome is logged.
+- **Result page:** polls the order (never changes it) and opens My Purchases when paid; a first My Purchases page lists owned products (downloads arrive in Phase 7).
+- **Maintenance:** `pnpm maintenance:run` expires stale orders and releases reservations, deletes expired tokens, old rate-limit buckets and unconfirmed uploads.
+- **Dashboard:** gateway toggles in the settings (only configured gateways can be enabled).
+- **Docs:** `docs/SANDBOX_TESTING.md` for manual sandbox runs of all three gateways through a tunnel.
+
+### Tests
+
+| Suite                                     | Count | Covers                                                                                                                                                                                                                                                                                                                                                                           |
+| ----------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integration — `checkout/webhooks.test.ts` | 18    | Moyasar, Paddle, PayPal and the fake gateway × valid, duplicate, amount mismatch, currency mismatch, bad/missing/stale signatures; Paddle tax-inclusive line matching; PayPal raw-event verification and capture; refunds revoking access and re-purchase restoring it; retries after provider errors; late payments with coupon overshoot; concurrent deliveries processed once |
+| Integration — `checkout/orders.test.ts`   | 11    | Snapshots, Moyasar SAR invoices with fixed prices, Paddle tax modes and no store tax, PayPal tax breakdown and idempotency key, zero-total orders, ownership, gateway availability and minimums, gateway outage, coupon rules, six concurrent checkouts on a two-use coupon, per-account and per-IP limits                                                                       |
+| Integration — `checkout/routes.test.ts`   | 9     | Cart and checkout actions with a simulated request scope, the fake gateway end to end, the webhook route (401/404/413/500 and duplicates), the order status route, gateway settings                                                                                                                                                                                              |
+| Integration — `maintenance/run.test.ts`   | 3     | Expiry and release (idempotent), token and bucket cleanup, unconfirmed uploads against MinIO                                                                                                                                                                                                                                                                                     |
+| Unit — pricing, cart, gateways, client IP | 46    | Rounding, allocation, coupons, tax, USD/SAR pricing, cart cookie tampering and caps, adapter signatures and request shapes, error messages without bodies, IP resolution behind proxies, gateway environment rules                                                                                                                                                               |
+| E2E — `checkout.spec.ts`                  | 9     | Add to cart → cart → coupon → fake payment → webhook → My Purchases; guests sent to sign in; free products; declined payments; status endpoint and forged webhooks; axe on cart and checkout in ar/en × light/dark                                                                                                                                                               |
+
+Totals: **276 unit + 155 integration (Vitest), 91 E2E (Playwright)**. Coverage: 94.4 % lines overall; `lib/money` 100 %, webhook processing 93 %.
+
+### Verification
+
+```bash
+pnpm services:up
+pnpm db:migrate && pnpm db:seed
+pnpm check
+pnpm test:e2e
+pnpm maintenance:run
+```
+
+### Known limitations
+
+- The three gateways were exercised against stubbed APIs and the fake gateway only; the sandbox runs in `docs/SANDBOX_TESTING.md` still need credentials and network access to the providers.
+- Downloads, receipt emails, the orders page and owner refunds arrive in Phases 7–8 (refund webhooks already revoke access).
+- Paddle.js and the gateways' pages need CSP allowances on checkout routes; the CSP itself arrives in Phase 9.
+- Visual baselines were refreshed for Linux (header cart link, purchase button); Windows baselines remain outdated.
+- `pnpm audit --prod`: no known vulnerabilities.
+
+### Next — Phase 7 (Delivery)
+
+Downloads from My Purchases through `/api/downloads/[entitlementId]/[fileId]` (ownership, revocation, per-minute limit from `DownloadLog`, hashed IP, pre-signed attachment URLs of at most 5 minutes) with the "Updated" badge; receipt emails; the orders page; refunds end to end.
