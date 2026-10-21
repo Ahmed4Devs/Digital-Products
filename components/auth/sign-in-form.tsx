@@ -51,6 +51,9 @@ export function SignInForm() {
       {notice === "password-reset" ? (
         <FormAlert tone="success">{t("signIn.resetNotice")}</FormAlert>
       ) : null}
+      {notice === "account-deleted" ? (
+        <FormAlert tone="success">{t("signIn.deletedNotice")}</FormAlert>
+      ) : null}
       {state.error ? <FormAlert tone="error">{t(`errors.${state.error}`)}</FormAlert> : null}
       <TextField
         id="sign-in-email"

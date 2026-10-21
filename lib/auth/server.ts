@@ -81,6 +81,9 @@ export function createAuth(env: ServerEnv = serverEnv()) {
         firstName: { type: "string", required: false, input: false },
         lastName: { type: "string", required: false, input: false },
       },
+      // Called only from the account page's Server Action, after a password check; the
+      // HTTP endpoint stays disabled below. The new address must confirm the change.
+      changeEmail: { enabled: true },
     },
 
     session: {
@@ -113,7 +116,9 @@ export function createAuth(env: ServerEnv = serverEnv()) {
       expiresIn: 60 * 60,
       async sendVerificationEmail({ user, url }) {
         await sendAuthEmail({
-          kind: "verifyEmail",
+          // Sign-up verification goes to unverified accounts; an email change is
+          // confirmed by a verified customer at the new address.
+          kind: user.emailVerified ? "changeEmail" : "verifyEmail",
           to: user.email,
           locale: localeOf(user),
           url,
@@ -167,8 +172,8 @@ export function createAuth(env: ServerEnv = serverEnv()) {
       backgroundTasks: { handler: (task) => runInBackground(task, "auth email") },
     },
 
-    // Endpoints the store does not use, or replaces with its own flows (account
-    // deletion and email change arrive with the account page in Phase 8).
+    // Endpoints the store does not use, or replaces with its own Server Actions that
+    // check the password first (email change and account deletion, features/account).
     disabledPaths: [
       "/is-username-available",
       "/update-user",

@@ -3,7 +3,7 @@ import { Button, Heading, Link, Section, Text } from "react-email";
 import { messagesByLocale } from "@/messages";
 import { EmailLayout, emailColors } from "./email-layout";
 
-export type AuthEmailKind = "verifyEmail" | "magicLink" | "resetPassword";
+export type AuthEmailKind = "verifyEmail" | "changeEmail" | "magicLink" | "resetPassword";
 
 type AuthEmailProps = {
   kind: AuthEmailKind;
@@ -22,7 +22,7 @@ export function authEmailSubject(kind: AuthEmailKind, locale: Locale): string {
   return t(`${kind}.subject`, { storeName });
 }
 
-/** Verification, magic-link and password-reset emails share one layout. */
+/** Verification, email-change, magic-link and password-reset emails share one layout. */
 export function AuthEmail({ kind, locale, url }: AuthEmailProps) {
   const t = translatorFor(locale);
   const storeName = messagesByLocale[locale].common.storeName;

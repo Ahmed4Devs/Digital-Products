@@ -2,7 +2,7 @@ import { render } from "react-email";
 import { describe, expect, it } from "vitest";
 import { AuthEmail, authEmailSubject, type AuthEmailKind } from "@/emails/auth-email";
 
-const KINDS: AuthEmailKind[] = ["verifyEmail", "magicLink", "resetPassword"];
+const KINDS: AuthEmailKind[] = ["verifyEmail", "changeEmail", "magicLink", "resetPassword"];
 const url = "https://store.example.com/api/auth/verify-email?token=abc.def&callbackURL=%2Far";
 
 describe.each(KINDS)("%s email", (kind) => {

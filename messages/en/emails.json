@@ -43,5 +43,13 @@
     "charged": "Charged",
     "button": "Open My Purchases",
     "security": "For your security, downloads are available only from your account."
+  },
+  "changeEmail": {
+    "subject": "Confirm your new email for {storeName}",
+    "preview": "Confirm the new address for your account.",
+    "heading": "Confirm your new email",
+    "body": "You asked to use this address for your account. Select the button below to confirm it; until then your account keeps its current email.",
+    "button": "Confirm new email",
+    "expiry": "This link expires in one hour."
   }
 }
