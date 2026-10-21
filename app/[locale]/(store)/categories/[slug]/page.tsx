@@ -74,6 +74,7 @@ export default async function CategoryPage({ params }: PageProps<"/[locale]/cate
           <ProductGrid
             products={products.slice(0, CATEGORY_PAGE_LIMIT)}
             usdToSarRate={settings.usdToSarRate}
+            headingLevel={2}
           />
           {products.length > CATEGORY_PAGE_LIMIT ? (
             <Link

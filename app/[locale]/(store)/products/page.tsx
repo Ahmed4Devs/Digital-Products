@@ -44,7 +44,11 @@ async function ProductResults({ searchParams }: { searchParams: Promise<SearchPa
         {t("resultCount", { count: results.total })}
       </p>
       {results.items.length > 0 ? (
-        <ProductGrid products={results.items} usdToSarRate={settings.usdToSarRate} />
+        <ProductGrid
+          products={results.items}
+          usdToSarRate={settings.usdToSarRate}
+          headingLevel={2}
+        />
       ) : (
         <EmptyState title={t("noResults")}>
           <p className="text-sm text-muted-foreground">{t("noResultsHint")}</p>

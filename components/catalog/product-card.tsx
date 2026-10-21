@@ -10,9 +10,12 @@ import { ProductImage } from "./product-image";
 type ProductCardProps = {
   product: ProductSummary;
   usdToSarRate: string;
+  /** h2 when the list sits directly under the page's h1, h3 under a section heading. */
+  headingLevel?: 2 | 3;
 };
 
-export async function ProductCard({ product, usdToSarRate }: ProductCardProps) {
+export async function ProductCard({ product, usdToSarRate, headingLevel = 3 }: ProductCardProps) {
+  const Heading = headingLevel === 2 ? "h2" : "h3";
   const locale = await getLocale();
   const title = localized(locale, { ar: product.titleAr, en: product.titleEn });
   const category = product.category
@@ -29,7 +32,7 @@ export async function ProductCard({ product, usdToSarRate }: ProductCardProps) {
       />
       <div className="flex flex-1 flex-col gap-2 p-4">
         {category ? <p className="text-xs font-medium text-muted-foreground">{category}</p> : null}
-        <h3 className="font-semibold leading-snug">
+        <Heading className="font-semibold leading-snug">
           {/* The stretched link makes the whole card clickable with one tab stop. */}
           <Link
             href={productHref(product.slug)}
@@ -37,7 +40,7 @@ export async function ProductCard({ product, usdToSarRate }: ProductCardProps) {
           >
             <EmojiText text={title} />
           </Link>
-        </h3>
+        </Heading>
         <p className="line-clamp-2 text-sm text-muted-foreground">
           <EmojiText
             text={localized(locale, {
