@@ -1,1 +1,31 @@
-{}
+{
+  "common": {
+    "linkFallback": "If the button doesn't work, copy and paste this link into your browser:",
+    "ignore": "If you didn't request this, you can safely ignore this email.",
+    "footer": "This email was sent by {storeName}."
+  },
+  "verifyEmail": {
+    "subject": "Confirm your email for {storeName}",
+    "preview": "One step to activate your account.",
+    "heading": "Confirm your email",
+    "body": "Thanks for signing up. Select the button below to confirm your email address and activate your account.",
+    "button": "Confirm email",
+    "expiry": "This link expires in one hour."
+  },
+  "magicLink": {
+    "subject": "Your sign-in link for {storeName}",
+    "preview": "Sign in with one click.",
+    "heading": "Your sign-in link",
+    "body": "Select the button below to sign in to your account. The link can be used only once.",
+    "button": "Sign in",
+    "expiry": "This link expires in 10 minutes."
+  },
+  "resetPassword": {
+    "subject": "Reset your {storeName} password",
+    "preview": "Choose a new password for your account.",
+    "heading": "Reset your password",
+    "body": "We received a request to reset the password for your account. Select the button below to choose a new password. You will be signed out on all other devices.",
+    "button": "Reset password",
+    "expiry": "This link expires in one hour."
+  }
+}
