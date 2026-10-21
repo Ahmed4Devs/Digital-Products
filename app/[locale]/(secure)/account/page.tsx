@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { LtrText } from "@/components/shared/ltr-text";
+import { buttonVariants } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import { requireCustomer } from "@/lib/auth/dal";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -9,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t("metadataTitle") };
 }
 
-// Placeholder overview; My Purchases, orders and profile settings arrive in Phases 7–8.
+// Overview; orders and profile settings arrive in Phases 7–8.
 export default async function AccountPage() {
   const [t, user] = await Promise.all([
     getTranslations("account.overview"),
@@ -23,6 +25,12 @@ export default async function AccountPage() {
         {t.rich("signedInAs", { email: () => <LtrText>{user.email}</LtrText> })}
       </p>
       <p className="text-muted-foreground">{t("comingSoon")}</p>
+      <Link
+        href="/account/library"
+        className={buttonVariants({ variant: "outline", className: "self-start" })}
+      >
+        {t("libraryLink")}
+      </Link>
       <div>
         <SignOutButton />
       </div>

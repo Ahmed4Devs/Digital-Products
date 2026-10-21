@@ -1,12 +1,14 @@
 import arAccount from "./ar/account.json";
 import arAdmin from "./ar/admin.json";
 import arAuth from "./ar/auth.json";
+import arCheckout from "./ar/checkout.json";
 import arCommon from "./ar/common.json";
 import arEmails from "./ar/emails.json";
 import arStore from "./ar/store.json";
 import enAccount from "./en/account.json";
 import enAdmin from "./en/admin.json";
 import enAuth from "./en/auth.json";
+import enCheckout from "./en/checkout.json";
 import enCommon from "./en/common.json";
 import enEmails from "./en/emails.json";
 import enStore from "./en/store.json";
@@ -16,6 +18,7 @@ const ar = {
   common: arCommon,
   store: arStore,
   auth: arAuth,
+  checkout: arCheckout,
   account: arAccount,
   admin: arAdmin,
   emails: arEmails,
@@ -29,6 +32,7 @@ const en: Messages = {
   common: enCommon,
   store: enStore,
   auth: enAuth,
+  checkout: enCheckout,
   account: enAccount,
   admin: enAdmin,
   emails: enEmails,

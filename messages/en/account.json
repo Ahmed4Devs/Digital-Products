@@ -3,6 +3,15 @@
     "metadataTitle": "My account",
     "title": "My account",
     "signedInAs": "Signed in as <email></email>",
-    "comingSoon": "Your purchases, orders and account settings will appear here."
+    "comingSoon": "Your purchases, orders and account settings will appear here.",
+    "libraryLink": "My Purchases"
+  },
+  "library": {
+    "title": "My Purchases",
+    "metadataTitle": "My Purchases",
+    "empty": "You have no purchases yet.",
+    "browse": "Browse products",
+    "purchasedOn": "Purchased on {date}",
+    "downloadsSoon": "Downloads open in the next update."
   }
 }

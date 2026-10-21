@@ -29,5 +29,25 @@
   "footer": {
     "copyright": "© {date, date, year} {storeName}. جميع الحقوق محفوظة.",
     "twemoji": "رسومات الإيموجي من <twemoji>Twemoji</twemoji>، مرخّصة بموجب <license>CC BY 4.0</license>."
+  },
+  "cart": {
+    "link": "السلة",
+    "addToCart": "أضف إلى السلة",
+    "inCart": "في سلتك",
+    "viewCart": "عرض السلة",
+    "getIt": "احصل عليه مجانًا",
+    "added": "أُضيف إلى سلتك.",
+    "owned": "أنت تملك هذا المنتج بالفعل.",
+    "errors": {
+      "unavailable": "هذا المنتج غير متاح.",
+      "cartFull": "سلتك ممتلئة. أكمل الشراء أو احذف منتجًا أولًا.",
+      "signInRequired": "يرجى تسجيل الدخول للمتابعة.",
+      "verifyRequired": "يرجى تأكيد بريدك الإلكتروني أولًا.",
+      "unexpected": "حدث خطأ ما. حاول مرة أخرى.",
+      "invalid": "حدث خطأ ما. حاول مرة أخرى.",
+      "tooManyOrders": "محاولات كثيرة. حاول مرة أخرى بعد بضع دقائق.",
+      "cartEmpty": "أنت تملك هذا المنتج بالفعل."
+    },
+    "itemCount": "عدد المنتجات: {count, number, integer}"
   }
 }

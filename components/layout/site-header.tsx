@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { CartLink } from "@/components/cart/cart-link";
 import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { AccountLink } from "./account-link";
@@ -26,9 +27,9 @@ export async function SiteHeader() {
             </Link>
           </nav>
         </div>
-        {/* Personal UI is resolved in the browser so pages stay static; the cart count
-            joins the account link in Phase 6. */}
+        {/* Personal UI (cart count, account) is resolved in the browser so pages stay static. */}
         <div className="flex items-center gap-1">
+          <CartLink />
           <AccountLink />
           <LanguageSwitcher />
           <ThemeToggle />

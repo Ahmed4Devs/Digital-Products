@@ -197,7 +197,13 @@
     "exchangeRate": "Exchange rate",
     "usdToSarRate": "USD → SAR rate",
     "rateHint": "SAR prices are converted with this rate and rounded half up to the halala. Past orders keep the rate they were placed at.",
-    "save": "Save"
+    "save": "Save",
+    "gateways": "Payment gateways",
+    "gatewaysHint": "Customers can choose only gateways that are both configured on the server and enabled here.",
+    "notConfigured": "Not configured: set its environment variables on the server.",
+    "moyasar": "Moyasar (SAR: mada, cards, Apple Pay, STC Pay)",
+    "paddle": "Paddle (USD, international cards, merchant of record)",
+    "paypal": "PayPal (USD)"
   },
   "errors": {
     "invalid": "Please check the highlighted fields.",
@@ -229,7 +235,8 @@
     "imageTooSmall": "Images must be at least 100 pixels on each side.",
     "imageTooLarge": "Images must be at most 10,000 pixels on each side.",
     "galleryFull": "The gallery is full. Remove an image first.",
-    "uploadFailed": "The upload failed. Please try again."
+    "uploadFailed": "The upload failed. Please try again.",
+    "fixedPriceInvalid": "Must be more than 0, and empty for free products."
   },
   "notices": {
     "productCreated": "Product created.",

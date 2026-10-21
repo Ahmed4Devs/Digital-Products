@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { ExchangeRateForm } from "@/components/admin/exchange-rate-form";
+import { GatewaySettingsForm } from "@/components/admin/gateway-settings-form";
+import { findCheckoutSettings } from "@/features/checkout/data";
+import { configuredProviders } from "@/lib/payments";
 import { findPublicStoreSettings } from "@/features/settings/data";
 import { requireOwner } from "@/lib/auth/dal";
 import { getDb } from "@/lib/db";
@@ -12,10 +15,13 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AdminSettingsPage() {
   await requireOwner();
-  const [t, settings] = await Promise.all([
+  const db = getDb();
+  const [t, settings, checkout] = await Promise.all([
     getTranslations("admin.settings"),
-    findPublicStoreSettings(getDb()),
+    findPublicStoreSettings(db),
+    findCheckoutSettings(db),
   ]);
+  const configured = configuredProviders();
 
   return (
     <div className="flex flex-col gap-6">
@@ -28,6 +34,21 @@ export default async function AdminSettingsPage() {
           {t("exchangeRate")}
         </h2>
         <ExchangeRateForm usdToSarRate={settings.usdToSarRate} />
+      </section>
+      <section
+        aria-labelledby="gateways"
+        className="flex flex-col gap-4 rounded-xl border p-4 sm:p-6"
+      >
+        <h2 id="gateways" className="text-lg font-semibold">
+          {t("gateways")}
+        </h2>
+        <GatewaySettingsForm
+          gateways={(["moyasar", "paddle", "paypal"] as const).map((id) => ({
+            id,
+            configured: configured.has(id),
+            enabled: checkout.enabled[id],
+          }))}
+        />
       </section>
     </div>
   );

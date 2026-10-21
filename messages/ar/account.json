@@ -3,6 +3,15 @@
     "metadataTitle": "حسابي",
     "title": "حسابي",
     "signedInAs": "مسجّل الدخول بالبريد <email></email>",
-    "comingSoon": "ستظهر هنا مشترياتك وطلباتك وإعدادات حسابك."
+    "comingSoon": "ستظهر هنا مشترياتك وطلباتك وإعدادات حسابك.",
+    "libraryLink": "مشترياتي"
+  },
+  "library": {
+    "title": "مشترياتي",
+    "metadataTitle": "مشترياتي",
+    "empty": "لا توجد مشتريات بعد.",
+    "browse": "تصفح المنتجات",
+    "purchasedOn": "تاريخ الشراء: {date}",
+    "downloadsSoon": "تتوفر التنزيلات في التحديث القادم."
   }
 }

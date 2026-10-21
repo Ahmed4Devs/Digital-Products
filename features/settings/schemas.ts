@@ -17,3 +17,16 @@ export const exchangeRateSchema = z.strictObject({
     return rate;
   }),
 });
+
+const checkbox = z
+  .literal("on")
+  .optional()
+  .transform((value) => value === "on");
+
+export const gatewaySettingsSchema = z.strictObject({
+  moyasarEnabled: checkbox,
+  paddleEnabled: checkbox,
+  paypalEnabled: checkbox,
+});
+
+export type GatewaySettings = z.output<typeof gatewaySettingsSchema>;

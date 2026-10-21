@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { PurchaseButton } from "@/components/cart/purchase-button";
 import { Breadcrumbs } from "@/components/catalog/breadcrumbs";
 import { ProductDetailView } from "@/components/catalog/product-detail";
 import { categoryHref, productHref } from "@/lib/seo/paths";
@@ -101,9 +102,12 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/produ
           />
         </>
       }
-      // Add-to-cart arrives with the cart and checkout in Phase 6.
       purchase={
-        <p className="rounded-lg border bg-muted/50 px-4 py-3 text-sm">{t("purchaseSoon")}</p>
+        <PurchaseButton
+          productId={product.id}
+          slug={product.slug}
+          free={product.priceUsdCents === 0}
+        />
       }
     />
   );
