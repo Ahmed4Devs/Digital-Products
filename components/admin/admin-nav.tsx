@@ -1,6 +1,12 @@
 "use client";
 
-import { FolderTreeIcon, LayoutDashboardIcon, PackageIcon, SettingsIcon } from "lucide-react";
+import {
+  FolderTreeIcon,
+  LayoutDashboardIcon,
+  PackageIcon,
+  ReceiptTextIcon,
+  SettingsIcon,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -9,6 +15,7 @@ const ITEMS = [
   { href: "/admin", key: "overview", icon: LayoutDashboardIcon },
   { href: "/admin/products", key: "products", icon: PackageIcon },
   { href: "/admin/categories", key: "categories", icon: FolderTreeIcon },
+  { href: "/admin/orders", key: "orders", icon: ReceiptTextIcon },
   { href: "/admin/settings", key: "settings", icon: SettingsIcon },
 ] as const;
 

@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import Form from "next/form";
 import type { Route } from "next";
+import { Pagination } from "@/components/admin/pagination";
 import { ProductStatusBadge } from "@/components/admin/status-badge";
 import { MoneyText } from "@/components/shared/money-text";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -192,33 +193,11 @@ export default async function AdminProductsPage({
         </div>
       )}
 
-      {pageCount > 1 ? (
-        <nav aria-label={t("pagination")} className="flex items-center justify-center gap-3">
-          {search.page > 1 ? (
-            <Link
-              href={hrefFor(search, { page: search.page - 1 })}
-              rel="prev"
-              className={buttonVariants({ variant: "outline" })}
-            >
-              <ChevronLeftIcon aria-hidden="true" className="rtl:-scale-x-100" />
-              {t("previous")}
-            </Link>
-          ) : null}
-          <p className="text-sm text-muted-foreground" aria-current="page">
-            {t("pageStatus", { page: search.page, pageCount })}
-          </p>
-          {search.page < pageCount ? (
-            <Link
-              href={hrefFor(search, { page: search.page + 1 })}
-              rel="next"
-              className={buttonVariants({ variant: "outline" })}
-            >
-              {t("next")}
-              <ChevronRightIcon aria-hidden="true" className="rtl:-scale-x-100" />
-            </Link>
-          ) : null}
-        </nav>
-      ) : null}
+      <Pagination
+        page={search.page}
+        pageCount={pageCount}
+        hrefFor={(page) => hrefFor(search, { page })}
+      />
     </div>
   );
 }

@@ -8,7 +8,8 @@
       "overview": "نظرة عامة",
       "products": "المنتجات",
       "categories": "الأقسام",
-      "settings": "الإعدادات"
+      "settings": "الإعدادات",
+      "orders": "الطلبات"
     }
   },
   "overview": {
@@ -17,7 +18,26 @@
     "products": "المنتجات",
     "published": "المنشورة: {count, number, integer}",
     "drafts": "المسودات: {count, number, integer}",
-    "manageProducts": "إدارة المنتجات"
+    "manageProducts": "إدارة المنتجات",
+    "salesToday": "مبيعات اليوم",
+    "salesWindow": "المبيعات، آخر {days, number, integer} يومًا",
+    "paidOrders": "الطلبات المدفوعة: {count, number, integer}",
+    "pendingOrders": "بانتظار الدفع",
+    "viewPending": "عرض الطلبات المعلقة",
+    "overshoot": "طلبات دُفعت بعد أن بلغت قسيمتها حدها: {count, number, integer}.",
+    "reviewOvershoot": "راجعها",
+    "topProducts": "الأكثر مبيعًا، آخر {days, number, integer} يومًا",
+    "noSales": "لا توجد مبيعات في هذه الفترة بعد.",
+    "product": "المنتج",
+    "sold": "المبيع",
+    "recentOrders": "أحدث الطلبات",
+    "noOrders": "لا توجد طلبات بعد.",
+    "order": "الطلب",
+    "orderNumber": "الطلب {number}",
+    "customer": "العميل",
+    "charged": "المبلغ المدفوع",
+    "status": "الحالة",
+    "allOrders": "كل الطلبات"
   },
   "products": {
     "title": "المنتجات",
@@ -41,11 +61,7 @@
       "updated": "آخر تعديل"
     },
     "sortAscending": "مرتب تصاعديًا",
-    "sortDescending": "مرتب تنازليًا",
-    "pagination": "الصفحات",
-    "previous": "السابق",
-    "next": "التالي",
-    "pageStatus": "صفحة {page, number, integer} من {pageCount, number, integer}"
+    "sortDescending": "مرتب تنازليًا"
   },
   "status": {
     "all": "الكل",
@@ -236,7 +252,12 @@
     "imageTooLarge": "يجب ألا تزيد أبعاد الصورة على 10,000 بكسل لكل جانب.",
     "galleryFull": "المعرض ممتلئ. احذف صورة أولًا.",
     "uploadFailed": "تعذّر الرفع. حاول مرة أخرى.",
-    "fixedPriceInvalid": "يجب أن يكون أكبر من 0، وفارغًا للمنتجات المجانية."
+    "fixedPriceInvalid": "يجب أن يكون أكبر من 0، وفارغًا للمنتجات المجانية.",
+    "receiptUnavailable": "تُرسل الإيصالات للطلبات المدفوعة فقط.",
+    "notRefundable": "يمكن استرداد الطلبات المدفوعة فقط.",
+    "gatewayUnavailable": "بوابة الدفع لهذا الطلب غير مهيأة على الخادم.",
+    "refundFailed": "رفضت بوابة الدفع الاسترداد. راجع لوحة تحكمها ثم حاول مجددًا.",
+    "notPaid": "يُمنح الوصول للطلبات المدفوعة فقط."
   },
   "notices": {
     "productCreated": "أُنشئ المنتج.",
@@ -253,6 +274,103 @@
     "categorySaved": "حُفظ القسم.",
     "categoryDeleted": "حُذف القسم.",
     "categoryMoved": "حُدِّث الترتيب.",
-    "settingsSaved": "حُفظت الإعدادات."
+    "settingsSaved": "حُفظت الإعدادات.",
+    "receiptSent": "أُرسل الإيصال.",
+    "orderRefunded": "استُرد الطلب ولم يعد للعميل وصول إلى منتجاته.",
+    "refundPending": "طُلب الاسترداد. يُعلَّم الطلب مستردًا عندما تؤكده البوابة.",
+    "accessGranted": "مُنح الوصول.",
+    "accessRevoked": "أُلغي الوصول."
+  },
+  "pagination": {
+    "label": "الصفحات",
+    "previous": "السابق",
+    "next": "التالي",
+    "pageStatus": "صفحة {page, number, integer} من {pageCount, number, integer}"
+  },
+  "orderStatus": {
+    "all": "الكل",
+    "pending": "بانتظار الدفع",
+    "paid": "مدفوع",
+    "failed": "فشل",
+    "refunded": "مسترد",
+    "expired": "منتهي"
+  },
+  "orders": {
+    "title": "الطلبات",
+    "filters": "تصفية الطلبات",
+    "search": "بحث",
+    "searchPlaceholder": "رقم الطلب أو البريد الإلكتروني",
+    "statusFilter": "الحالة",
+    "from": "من",
+    "to": "إلى",
+    "overshootOnly": "قسيمة تجاوزت حدها",
+    "apply": "تطبيق",
+    "results": "النتائج: {count, number, integer}",
+    "empty": "لا توجد طلبات مطابقة.",
+    "number": "الطلب {number}",
+    "overshoot": "قسيمة تجاوزت الحد",
+    "columns": {
+      "number": "الطلب",
+      "date": "التاريخ",
+      "customer": "العميل",
+      "items": "العناصر",
+      "total": "المبلغ المدفوع",
+      "status": "الحالة"
+    }
+  },
+  "orderDetail": {
+    "title": "الطلب {number}",
+    "notFound": "الطلب غير موجود",
+    "back": "كل الطلبات",
+    "overshoot": "قسيمة تجاوزت الحد",
+    "overshootHint": "دُفع هذا الطلب بعد أن بلغت قسيمته حد الاستخدام. لم يُرفض الطلب؛ راجع القسيمة إن تكرر ذلك.",
+    "summary": "الملخص",
+    "placedOn": "تاريخ الطلب",
+    "paidAt": "تاريخ الدفع",
+    "refundedAt": "تاريخ الاسترداد",
+    "customer": "العميل",
+    "accountDeleted": "<email></email> (حساب محذوف)",
+    "language": "اللغة",
+    "languages": {
+      "ar": "العربية",
+      "en": "الإنجليزية"
+    },
+    "gateway": "بوابة الدفع",
+    "reference": "مرجع البوابة",
+    "coupon": "القسيمة",
+    "exchangeRate": "سعر صرف الدولار إلى الريال",
+    "items": "العناصر",
+    "product": "المنتج",
+    "price": "السعر",
+    "access": "الوصول",
+    "downloads": "التنزيلات",
+    "accessActions": "إجراءات الوصول",
+    "accessActive": "مفعّل",
+    "accessRevoked": "ملغى",
+    "accessNone": "لا يوجد",
+    "grant": "منح الوصول",
+    "grantFor": "منح الوصول إلى {title}",
+    "revoke": "إلغاء الوصول",
+    "revokeFor": "إلغاء الوصول إلى {title}",
+    "revokeTitle": "إلغاء الوصول؟",
+    "revokeDescription": "لن يتمكن العميل من تنزيل هذا المنتج. يمكنك منحه الوصول لاحقًا.",
+    "confirmRevoke": "إلغاء الوصول",
+    "subtotal": "المجموع الفرعي",
+    "discount": "الخصم",
+    "tax": "الضريبة",
+    "total": "الإجمالي",
+    "charged": "المبلغ المدفوع",
+    "events": "أحداث الدفع",
+    "noEvents": "لا توجد أحداث دفع بعد.",
+    "eventReceived": "وقت الاستلام",
+    "eventType": "النوع",
+    "eventOutcome": "النتيجة",
+    "eventId": "معرّف الحدث",
+    "resendReceipt": "إعادة إرسال الإيصال",
+    "refund": "استرداد",
+    "refundTitle": "استرداد هذا الطلب؟",
+    "refundDescription": "يُسترد المبلغ كاملًا عبر بوابة الدفع ويفقد العميل الوصول إلى منتجات الطلب.",
+    "confirmRefund": "استرداد",
+    "cancel": "إلغاء"
   }
 }

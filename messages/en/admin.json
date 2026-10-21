@@ -8,7 +8,8 @@
       "overview": "Overview",
       "products": "Products",
       "categories": "Categories",
-      "settings": "Settings"
+      "settings": "Settings",
+      "orders": "Orders"
     }
   },
   "overview": {
@@ -17,7 +18,26 @@
     "products": "Products",
     "published": "Published: {count, number, integer}",
     "drafts": "Drafts: {count, number, integer}",
-    "manageProducts": "Manage products"
+    "manageProducts": "Manage products",
+    "salesToday": "Sales today",
+    "salesWindow": "Sales, last {days, number, integer} days",
+    "paidOrders": "Paid orders: {count, number, integer}",
+    "pendingOrders": "Awaiting payment",
+    "viewPending": "View pending orders",
+    "overshoot": "Orders paid after their coupon reached its limit: {count, number, integer}.",
+    "reviewOvershoot": "Review them",
+    "topProducts": "Top products, last {days, number, integer} days",
+    "noSales": "No sales in this period yet.",
+    "product": "Product",
+    "sold": "Sold",
+    "recentOrders": "Recent orders",
+    "noOrders": "No orders yet.",
+    "order": "Order",
+    "orderNumber": "Order {number}",
+    "customer": "Customer",
+    "charged": "Charged",
+    "status": "Status",
+    "allOrders": "All orders"
   },
   "products": {
     "title": "Products",
@@ -41,11 +61,7 @@
       "updated": "Updated"
     },
     "sortAscending": "Sorted ascending",
-    "sortDescending": "Sorted descending",
-    "pagination": "Pages",
-    "previous": "Previous",
-    "next": "Next",
-    "pageStatus": "Page {page, number, integer} of {pageCount, number, integer}"
+    "sortDescending": "Sorted descending"
   },
   "status": {
     "all": "All",
@@ -236,7 +252,12 @@
     "imageTooLarge": "Images must be at most 10,000 pixels on each side.",
     "galleryFull": "The gallery is full. Remove an image first.",
     "uploadFailed": "The upload failed. Please try again.",
-    "fixedPriceInvalid": "Must be more than 0, and empty for free products."
+    "fixedPriceInvalid": "Must be more than 0, and empty for free products.",
+    "receiptUnavailable": "Receipts can be sent only for paid orders.",
+    "notRefundable": "Only paid orders can be refunded.",
+    "gatewayUnavailable": "This order's payment gateway is not configured on the server.",
+    "refundFailed": "The payment gateway refused the refund. Check its dashboard and try again.",
+    "notPaid": "Access can be granted only for paid orders."
   },
   "notices": {
     "productCreated": "Product created.",
@@ -253,6 +274,103 @@
     "categorySaved": "Category saved.",
     "categoryDeleted": "Category deleted.",
     "categoryMoved": "Order updated.",
-    "settingsSaved": "Settings saved."
+    "settingsSaved": "Settings saved.",
+    "receiptSent": "Receipt sent.",
+    "orderRefunded": "Order refunded. The customer no longer has access.",
+    "refundPending": "Refund requested. The order is marked refunded once the gateway confirms it.",
+    "accessGranted": "Access granted.",
+    "accessRevoked": "Access revoked."
+  },
+  "pagination": {
+    "label": "Pages",
+    "previous": "Previous",
+    "next": "Next",
+    "pageStatus": "Page {page, number, integer} of {pageCount, number, integer}"
+  },
+  "orderStatus": {
+    "all": "All",
+    "pending": "Awaiting payment",
+    "paid": "Paid",
+    "failed": "Failed",
+    "refunded": "Refunded",
+    "expired": "Expired"
+  },
+  "orders": {
+    "title": "Orders",
+    "filters": "Filter orders",
+    "search": "Search",
+    "searchPlaceholder": "Order number or email",
+    "statusFilter": "Status",
+    "from": "From",
+    "to": "To",
+    "overshootOnly": "Coupon over its limit",
+    "apply": "Apply",
+    "results": "Results: {count, number, integer}",
+    "empty": "No orders match.",
+    "number": "Order {number}",
+    "overshoot": "Coupon over limit",
+    "columns": {
+      "number": "Order",
+      "date": "Placed",
+      "customer": "Customer",
+      "items": "Items",
+      "total": "Charged",
+      "status": "Status"
+    }
+  },
+  "orderDetail": {
+    "title": "Order {number}",
+    "notFound": "Order not found",
+    "back": "All orders",
+    "overshoot": "Coupon over limit",
+    "overshootHint": "This order was paid after its coupon reached its usage limit. It was not rejected; review the coupon if this keeps happening.",
+    "summary": "Summary",
+    "placedOn": "Placed",
+    "paidAt": "Paid",
+    "refundedAt": "Refunded",
+    "customer": "Customer",
+    "accountDeleted": "<email></email> (account deleted)",
+    "language": "Language",
+    "languages": {
+      "ar": "Arabic",
+      "en": "English"
+    },
+    "gateway": "Gateway",
+    "reference": "Gateway reference",
+    "coupon": "Coupon",
+    "exchangeRate": "USD → SAR rate",
+    "items": "Items",
+    "product": "Product",
+    "price": "Price",
+    "access": "Access",
+    "downloads": "Downloads",
+    "accessActions": "Access actions",
+    "accessActive": "Active",
+    "accessRevoked": "Revoked",
+    "accessNone": "None",
+    "grant": "Grant access",
+    "grantFor": "Grant access to {title}",
+    "revoke": "Revoke access",
+    "revokeFor": "Revoke access to {title}",
+    "revokeTitle": "Revoke access?",
+    "revokeDescription": "The customer can no longer download this product. You can grant it again later.",
+    "confirmRevoke": "Revoke",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "tax": "Tax",
+    "total": "Total",
+    "charged": "Charged",
+    "events": "Payment events",
+    "noEvents": "No payment events yet.",
+    "eventReceived": "Received",
+    "eventType": "Type",
+    "eventOutcome": "Outcome",
+    "eventId": "Event ID",
+    "resendReceipt": "Resend receipt",
+    "refund": "Refund",
+    "refundTitle": "Refund this order?",
+    "refundDescription": "The full amount is refunded through the payment gateway and the customer loses access to its products.",
+    "confirmRefund": "Refund",
+    "cancel": "Cancel"
   }
 }
