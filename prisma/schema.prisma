@@ -325,7 +325,10 @@ model Order {
   locale                Locale
   /// Null for zero-total orders, which skip the gateway (spec §17.5 §6).
   provider              PaymentProviderId?
+  /// The provider's checkout object: Moyasar invoice, Paddle transaction, PayPal order.
   providerReference     String?            @map("provider_reference")
+  /// The captured payment, for refunds: Moyasar payment, PayPal capture.
+  providerPaymentId     String?            @map("provider_payment_id")
   paidAt                DateTime?          @map("paid_at") @db.Timestamptz(3)
   refundedAt            DateTime?          @map("refunded_at") @db.Timestamptz(3)
   createdAt             DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -372,6 +375,8 @@ model PaymentEvent {
   type            String
   payload         Json
   orderId         String?           @map("order_id") @db.Uuid
+  /// What processing decided (fulfilled, duplicate, amount_mismatch, …), for the owner.
+  outcome         String?
   processedAt     DateTime?         @map("processed_at") @db.Timestamptz(3)
   createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
 
