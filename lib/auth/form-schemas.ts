@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AuthErrorKey } from "./error-messages";
+import "@/lib/validation/zod-config";
 
 // Client-side checks for the auth forms, mirroring the server rules so customers get a
 // translated message before a request is sent. Better Auth re-validates everything.

@@ -1,5 +1,11 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import {
+  cspContextFromEnv,
+  securityHeaders,
+  STATIC_POLICY_SOURCE,
+  staticPolicy,
+} from "./lib/security/csp";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
@@ -47,6 +53,13 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      { source: "/:path*", headers: securityHeaders() },
+      {
+        // Prerendered and other non-nonce routes (spec §17.5 §2); proxy.ts sets the
+        // nonce policy on the rest. Read at build time, like the image allowlist.
+        source: STATIC_POLICY_SOURCE,
+        headers: [{ key: "Content-Security-Policy", value: staticPolicy(cspContextFromEnv()) }],
+      },
       {
         // Self-hosted Twemoji graphics change only when the vendored set is upgraded.
         source: "/twemoji/:file*",

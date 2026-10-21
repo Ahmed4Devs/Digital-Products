@@ -1,9 +1,16 @@
 import { getCookieCache, getSessionCookie } from "better-auth/cookies";
 import { makeSignature } from "better-auth/crypto";
 import createIntlMiddleware from "next-intl/middleware";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { routing } from "@/i18n/routing";
 import { safeEqual } from "@/lib/security/compare";
+import {
+  createNonce,
+  cspContextFromEnv,
+  noncePolicy,
+  nonceRouteFor,
+  type NonceRoute,
+} from "@/lib/security/csp";
 
 const handleI18nRouting = createIntlMiddleware(routing);
 
@@ -75,9 +82,20 @@ async function isOwnerRequest(request: NextRequest, lookUp: OwnerSessionLookup):
  * - Answers the admin with a genuine 404 status for every request that is not the
  *   owner's. Once a page starts streaming its status is fixed at 200, so the layouts'
  *   own checks can only render the 404 page; this gives everyone else the real status.
- * The account layout, the admin layout and the DAL make the actual decisions. Phase 9
- * adds the per-request CSP nonce for the routes of spec §17.5 §2.
+ * - Gives the dynamic routes of spec §17.5 §2 a per-request CSP nonce: in the request
+ *   headers, where Next.js applies it to its scripts, and in the response policy.
+ * The account layout, the admin layout and the DAL make the actual decisions.
  */
+/** The request with its nonce policy (Next.js reads the nonce from it), and the policy. */
+function withNonce(request: NextRequest, route: NonceRoute) {
+  const nonce = createNonce();
+  const policy = noncePolicy(route, nonce, cspContextFromEnv());
+  const headers = new Headers(request.headers);
+  headers.set("Content-Security-Policy", policy);
+  headers.set("x-nonce", nonce);
+  return { request: new NextRequest(request, { headers }), headers, policy };
+}
+
 export function createProxy(lookUp: OwnerSessionLookup) {
   return async function proxy(request: NextRequest) {
     const { pathname, search } = request.nextUrl;
@@ -90,12 +108,20 @@ export function createProxy(lookUp: OwnerSessionLookup) {
       return NextResponse.redirect(signIn);
     }
 
+    const route = nonceRouteFor(pathname);
+    const secured = route ? withNonce(request, route) : null;
+
     const adminArea = ADMIN_AREA.exec(pathname);
+    let response: NextResponse;
     if (adminArea && !(await isOwnerRequest(request, lookUp))) {
       // A path no route matches renders the standard not-found page with status 404.
-      return NextResponse.rewrite(new URL(`/${adminArea[1]}/admin/_not-found`, request.url));
+      response = NextResponse.rewrite(new URL(`/${adminArea[1]}/admin/_not-found`, request.url), {
+        request: secured ? { headers: secured.headers } : undefined,
+      });
+    } else {
+      response = handleI18nRouting(secured?.request ?? request);
     }
-
-    return handleI18nRouting(request);
+    if (secured) response.headers.set("Content-Security-Policy", secured.policy);
+    return response;
   };
 }

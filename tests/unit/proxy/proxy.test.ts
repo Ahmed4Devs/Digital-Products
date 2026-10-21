@@ -103,3 +103,29 @@ describe("admin 404s from the session token", () => {
     expect(notFound(await failing(request("/en/admin", await signed("any-token"))))).toBe(false);
   });
 });
+
+describe("CSP nonces", () => {
+  it("passes one fresh nonce to the app and the browser on nonce routes", async () => {
+    const first = await proxy(request("/en/sign-in"));
+    const policy = first.headers.get("content-security-policy") ?? "";
+    const nonce = /'nonce-([^']+)'/.exec(policy)?.[1];
+    expect(nonce).toBeTruthy();
+    expect(first.headers.get("x-middleware-request-x-nonce")).toBe(nonce);
+    expect(first.headers.get("x-middleware-request-content-security-policy")).toBe(policy);
+
+    const second = await proxy(request("/en/sign-in"));
+    expect(second.headers.get("x-middleware-request-x-nonce")).not.toBe(nonce);
+  });
+
+  it("keeps the nonce policy on the admin's 404 rewrite", async () => {
+    const response = await proxy(request("/en/admin/orders"));
+    expect(response.headers.get("x-middleware-rewrite")).toMatch(/_not-found$/);
+    expect(response.headers.get("content-security-policy")).toMatch(/'nonce-/);
+  });
+
+  it("leaves the static policy of catalog routes to next.config", async () => {
+    const response = await proxy(request("/en/products"));
+    expect(response.headers.get("content-security-policy")).toBeNull();
+    expect(response.headers.get("x-middleware-request-x-nonce")).toBeNull();
+  });
+});

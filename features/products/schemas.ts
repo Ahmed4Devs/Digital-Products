@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { parseMajorUnits, type Currency } from "@/lib/money";
 import { graphemeLength, SLUG_MAX_LENGTH, slugify } from "@/lib/text";
+import "@/lib/validation/zod-config";
 
 // The owner's product form (spec §11). Shared by the browser (instant feedback) and the
 // Server Action (the authority). Messages are keys under `admin.errors`.
