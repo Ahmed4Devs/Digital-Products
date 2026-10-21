@@ -28,6 +28,12 @@ const commaList = z.string().transform((value) =>
     .filter(Boolean),
 );
 
+const GATEWAY_VARIABLES = [
+  ["MOYASAR_SECRET_KEY", "MOYASAR_WEBHOOK_SECRET"],
+  ["PADDLE_API_KEY", "PADDLE_CLIENT_TOKEN", "PADDLE_WEBHOOK_SECRET"],
+  ["PAYPAL_CLIENT_ID", "PAYPAL_CLIENT_SECRET", "PAYPAL_WEBHOOK_ID"],
+] as const;
+
 export const serverEnvSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -64,8 +70,25 @@ export const serverEnvSchema = z
     S3_BUCKET_PRIVATE: z.string({ error: requiredOr("is required") }).min(3),
     S3_BUCKET_PUBLIC: z.string({ error: requiredOr("is required") }).min(3),
 
-    // Replaces external services (Turnstile, the compromised-password API and, from
-    // Phase 6, the payment gateways) with local fakes for automated tests. Refused
+    // Payment gateways (spec §10.2). Each one is optional and available at checkout only
+    // when all of its variables are set and the owner has enabled it in the settings.
+    // Use test/sandbox keys everywhere except the live store.
+    MOYASAR_SECRET_KEY: z.string().min(1).optional(),
+    MOYASAR_WEBHOOK_SECRET: z.string().min(16).optional(),
+    PADDLE_API_KEY: z.string().min(1).optional(),
+    PADDLE_CLIENT_TOKEN: z.string().min(1).optional(),
+    PADDLE_WEBHOOK_SECRET: z.string().min(1).optional(),
+    PADDLE_ENVIRONMENT: z.enum(["sandbox", "production"]).default("sandbox"),
+    // The store's prices include tax by default, matching how prices are shown.
+    PADDLE_TAX_MODE: z.enum(["internal", "external"]).default("internal"),
+    PADDLE_TAX_CATEGORY: z.string().min(1).default("standard"),
+    PAYPAL_CLIENT_ID: z.string().min(1).optional(),
+    PAYPAL_CLIENT_SECRET: z.string().min(1).optional(),
+    PAYPAL_WEBHOOK_ID: z.string().min(1).optional(),
+    PAYPAL_ENVIRONMENT: z.enum(["sandbox", "live"]).default("sandbox"),
+
+    // Replaces external services (Turnstile, the compromised-password API) with local
+    // fakes and adds the test-only fake payment gateway, for automated tests. Refused
     // unless APP_URL is loopback, so a deployed server can never enable it.
     TEST_DOUBLES: z.enum(["on", "off"]).default("off"),
   })
@@ -85,6 +108,20 @@ export const serverEnvSchema = z
       for (const key of ["TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY"] as const) {
         if (env[key] === undefined) {
           ctx.addIssue({ code: "custom", path: [key], message: "is required" });
+        }
+      }
+    }
+
+    for (const group of GATEWAY_VARIABLES) {
+      const missing = group.filter((key) => env[key] === undefined);
+      // All or nothing: a half-configured gateway is a typo, not a choice.
+      if (missing.length > 0 && missing.length < group.length) {
+        for (const key of missing) {
+          ctx.addIssue({
+            code: "custom",
+            path: [key],
+            message: `is required when any of ${group.join(", ")} is set`,
+          });
         }
       }
     }

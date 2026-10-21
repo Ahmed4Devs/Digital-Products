@@ -40,6 +40,10 @@ const defaults = {
   AUTH_IP_HEADERS: ["x-forwarded-for"],
   AUTH_TRUSTED_PROXIES: [],
   TEST_DOUBLES: "off",
+  PADDLE_ENVIRONMENT: "sandbox",
+  PADDLE_TAX_MODE: "internal",
+  PADDLE_TAX_CATEGORY: "standard",
+  PAYPAL_ENVIRONMENT: "sandbox",
 };
 
 function errorOf(source: Record<string, string | undefined>): string {
@@ -231,6 +235,36 @@ describe("object storage", () => {
       "S3_ENDPOINT: must use https in production",
     );
     expect(() => parseServerEnv({ ...devEnv, NODE_ENV: "production" })).not.toThrow();
+  });
+});
+
+describe("payment gateways", () => {
+  it("are optional, but all-or-nothing per gateway", () => {
+    expect(() => parseServerEnv(devEnv)).not.toThrow();
+    expect(
+      parseServerEnv({
+        ...devEnv,
+        MOYASAR_SECRET_KEY: "sk_test_x",
+        MOYASAR_WEBHOOK_SECRET: "shared-secret-123456",
+      }).MOYASAR_SECRET_KEY,
+    ).toBe("sk_test_x");
+    expect(errorOf({ ...devEnv, PADDLE_API_KEY: "pdl_key" })).toContain(
+      "PADDLE_WEBHOOK_SECRET: is required when any of PADDLE_API_KEY, PADDLE_CLIENT_TOKEN",
+    );
+    const message = errorOf({ ...devEnv, PAYPAL_WEBHOOK_ID: "WH-1" });
+    expect(message).toContain("PAYPAL_CLIENT_ID: is required when any of");
+    expect(message).toContain("PAYPAL_CLIENT_SECRET");
+  });
+
+  it("validates environments and the Paddle tax mode", () => {
+    expect(errorOf({ ...devEnv, PADDLE_ENVIRONMENT: "live" })).toContain("PADDLE_ENVIRONMENT");
+    expect(errorOf({ ...devEnv, PAYPAL_ENVIRONMENT: "production" })).toContain(
+      "PAYPAL_ENVIRONMENT",
+    );
+    expect(errorOf({ ...devEnv, PADDLE_TAX_MODE: "account_setting" })).toContain("PADDLE_TAX_MODE");
+    expect(
+      errorOf({ ...devEnv, MOYASAR_SECRET_KEY: "sk", MOYASAR_WEBHOOK_SECRET: "short" }),
+    ).toContain("MOYASAR_WEBHOOK_SECRET");
   });
 });
 
