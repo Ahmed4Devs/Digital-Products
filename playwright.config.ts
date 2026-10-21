@@ -5,8 +5,11 @@ const PORT = 3100;
 const baseURL = `http://localhost:${PORT}`;
 const isCI = Boolean(process.env.CI);
 
-// The app under test always talks to the separate, disposable test database.
+// The app under test always talks to the separate, disposable test database, with
+// external services replaced by their test doubles.
 const databaseUrl = configureTestDatabase();
+// Optional: a locally installed Chromium when the bundled revision cannot be downloaded.
+const chromiumExecutable = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
 // Production build by default (closest to real behaviour); E2E_DEV=1 uses `next dev`
 // for faster iteration.
@@ -28,7 +31,15 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(chromiumExecutable ? { launchOptions: { executablePath: chromiumExecutable } } : {}),
+      },
+    },
+  ],
   webServer: {
     command: serverCommand,
     url: `${baseURL}/api/health`,
@@ -37,6 +48,8 @@ export default defineConfig({
     env: {
       APP_URL: baseURL,
       DATABASE_URL: databaseUrl,
+      TEST_DOUBLES: "on",
+      RESEND_API_KEY: "",
       NEXT_TELEMETRY_DISABLED: "1",
     },
   },
