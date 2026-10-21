@@ -77,6 +77,22 @@ describe("productFormSchema", () => {
     });
   });
 
+  it("keeps free products free in both currencies", () => {
+    expect(
+      issueKeys(productFormSchema.safeParse({ titleEn: "A", priceUsd: "0", fixedPriceSar: "10" })),
+    ).toEqual({
+      fixedPriceSar: "fixedPriceInvalid",
+    });
+    expect(
+      issueKeys(productFormSchema.safeParse({ titleEn: "A", priceUsd: "5", fixedPriceSar: "0" })),
+    ).toEqual({
+      fixedPriceSar: "fixedPriceInvalid",
+    });
+    expect(
+      productFormSchema.safeParse({ titleEn: "A", priceUsd: "0", fixedPriceSar: "" }).success,
+    ).toBe(true);
+  });
+
   it("rejects missing prices and unknown fields", () => {
     expect(issueKeys(productFormSchema.safeParse({ titleEn: "A" }))).toEqual({
       priceUsd: "required",

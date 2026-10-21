@@ -112,6 +112,18 @@ export const productFormSchema = z
         (issue) => !["priceUsd", "compareAtPriceUsd"].includes(String(issue.path?.[0])),
       ) && parsed(payload, (value) => typeof value.priceUsd === "number"),
   })
+  .refine(
+    (input) => input.fixedPriceSar === null || (input.fixedPriceSar > 0 && input.priceUsd > 0),
+    {
+      // A free product is free in both currencies (zero-total orders, §17.5 §6).
+      path: ["fixedPriceSar"],
+      message: "fixedPriceInvalid",
+      when: (payload) =>
+        payload.issues.every(
+          (issue) => !["priceUsd", "fixedPriceSar"].includes(String(issue.path?.[0])),
+        ) && parsed(payload, (value) => typeof value.priceUsd === "number"),
+    },
+  )
   .transform((input, ctx) => {
     // The slug defaults to the English title, falling back to Arabic (Arabic slugs work).
     const slug = slugify(input.slug || input.titleEn || input.titleAr);
