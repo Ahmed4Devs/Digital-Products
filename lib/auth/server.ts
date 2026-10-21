@@ -149,6 +149,10 @@ export function createAuth(env: ServerEnv = serverEnv()) {
         "/send-verification-email": { window: 15 * 60, max: 3 },
         [AUTH_PATHS.signUpEmail]: { window: 60 * 60, max: 5 },
         "/change-password": { window: 15 * 60, max: 5 },
+        // Read-only and answered from the signed cookie cache: every storefront page asks
+        // it once (the header's account link), and a per-IP limit would lock out
+        // customers who share an address (offices, carrier NAT).
+        "/get-session": false,
       },
     },
 
