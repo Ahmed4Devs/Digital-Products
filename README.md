@@ -51,6 +51,8 @@ curl localhost:3000/api/health   # {"status":"ok","checks":{"database":"ok"}}
 - The owner signs in at `/ar/admin/sign-in` with `OWNER_USERNAME` and `OWNER_PASSWORD`. That page is not linked anywhere, and the rest of `/admin` answers 404 to everyone else.
 - Customers add products to the cart, check out (signed in, email verified), apply a coupon, and pay through an enabled gateway; free products are claimed with "Get it free". Paid products appear in My Purchases (`/[locale]/account/library`).
 - In the dashboard (`/ar/admin`) the owner creates products (Arabic/English tabs, rich-text description, USD price, optional fixed SAR and compare-at prices), uploads the cover, gallery and downloadable files, previews and publishes them, manages categories and sets the USD → SAR rate. Published changes appear in the store on the next request.
+- The dashboard also has the sales overview, orders (filters, details, resend receipt, refund, grant or revoke access), customers (purchases, ban, grant a product), coupons (create, edit, deactivate, usage), all store settings (bilingual name, logos, support email, tax, gateways, limits, legal page content) and the audit log of every change.
+- Customers manage their account at `/[locale]/account`: change the email (confirmed from the new address), change the password (other devices are signed out) or delete the account (orders are kept for the accounts, without the personal link).
 - Owner locked out? On the server: `pnpm owner:reset-password` sets a new password and signs the owner out everywhere.
 
 ## Environment variables
@@ -108,7 +110,7 @@ All ports listen on `127.0.0.1` only and use project-specific numbers so they do
 
 - **Unit tests** (`tests/unit`) are pure and need no services.
 - **Integration tests** (`tests/integration`) and **E2E tests** (`tests/e2e`) use the separate test database from `DATABASE_URL_TEST`, which is reset before each run. The helpers refuse any database whose name does not end in `_test`. They also need Mailpit (email is read back from its API) and MinIO (uploads are verified against real storage), and switch `TEST_DOUBLES` on, so no live service is ever called.
-- E2E specs for the dashboard (`admin.spec.ts`) run as a second Playwright project after the storefront specs, because publishing products changes the listings those specs assert.
+- E2E specs for the dashboard (`*admin.spec.ts`) run as a second Playwright project after the storefront specs, because publishing products and changing settings change what those specs assert.
 - E2E tests run against a production build on port 3100. Before building, `tests/e2e/prepare-database.ts` resets the test database and seeds settings, a test owner and the test catalog, because catalog pages are prerendered from it. A server already running on port 3100 is reused as is. If Playwright's bundled browser cannot be downloaded, point it at a local Chromium: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chrome pnpm test:e2e`.
 - `pnpm build` doubles as a test: home, product and category pages use `ensureStatic = "navigation"`, so the build fails if request-time code leaks into them.
 - Visual baselines are per operating system (`*-win32.png`, `*-linux.png`); refresh yours after intentional visual changes with `pnpm test:e2e --update-snapshots`.
@@ -122,11 +124,12 @@ app/[locale]/
                      home, products (search), products/[slug], categories/[slug], cart
   (secure)/          dynamic root layout for auth pages, account area and admin
     (auth)/          sign-in, sign-up, forgot/reset password, verify email
-    account/         customer area (guarded by the DAL): overview, library (My Purchases,
-                     downloads), orders
+    account/         customer area (guarded by the DAL): account settings (email, password,
+                     deletion), library (My Purchases, downloads), orders
     checkout/        checkout, result (polling), paddle (Paddle.js), fake (tests only)
     admin/           owner sign-in and dashboard (404 for everyone but the owner):
-                     overview, products (list, new, [id], [id]/preview), categories, settings
+                     overview, products (list, new, [id], [id]/preview), categories,
+                     orders, customers, coupons, settings, audit
 app/api/auth/        Better Auth handler (rate limits, policy hooks)
 app/api/webhooks/    one webhook endpoint per payment gateway ([provider])
 app/api/orders/      order status for the checkout result page
@@ -138,7 +141,8 @@ proxy.ts             locale negotiation and optimistic redirects / 404s (never a
 i18n/                routing, navigation helpers, shared formats, request config
 messages/{ar,en}/    translations split by domain (common, store, auth, account, admin, emails)
 components/admin/    dashboard navigation, product form, lazy rich-text editor and emoji picker,
-                     uploads (media, versioned files), lifecycle, categories, exchange rate
+                     uploads (media, versioned files, logos), lifecycle, categories, orders,
+                     customers, coupons, settings forms, shared pagination and badges
 components/auth/     sign-in, sign-up, magic-link, reset and owner forms (client)
 components/catalog/  product cards and grid, filters, pagination, breadcrumbs, JSON-LD
 components/layout/   root document, site shell, header, footer, language and theme switchers
@@ -147,7 +151,9 @@ components/shared/   EmojiText (server-side Twemoji), LtrText (bidi isolation), 
 components/ui/       shadcn/ui components
 emails/              bilingual React Email templates (auth emails, receipt)
 features/            cart (signed cookie), checkout (coupons, order placement, fulfilment,
-                     webhooks), downloads, library, orders (receipts), maintenance;
+                     webhooks), downloads, library, orders (receipts, owner actions, metrics),
+                     customers, coupons, audit (log viewer), account (email, password,
+                     deletion), maintenance;
                      products, categories, settings: data.ts (Prisma reads), queries.ts
                      ('use cache' + tags), schemas.ts (Zod), service.ts (audited owner writes),
                      actions.ts (Server Actions: owner check → Zod → service → updateTag);

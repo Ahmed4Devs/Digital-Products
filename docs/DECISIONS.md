@@ -539,3 +539,45 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 ## 2026-10-21 — Account pages
 
 **Decision.** The account area gets a section navigation (overview, My Purchases, orders). The orders page lists the customer's last 50 orders with their snapshots, status and amounts; it is separate from My Purchases (spec §10.4).
+
+## 2026-10-21 — Overview metrics
+
+**Decision.** Sales are paid orders counted by the time they were paid, summed in USD (`totalUsdCents`, kept for every order whatever currency was charged), so SAR and USD orders add up; "today" is the store's calendar day in Riyadh (UTC+3, no daylight saving) and the window is the last 30 calendar days including today. Refunded orders leave the figures. Top products count units sold in paid orders over the same window. The overview also shows orders awaiting payment and, when any exist, orders paid after their coupon reached its limit (`couponOvershoot`), linked to the filtered order list.
+
+## 2026-10-21 — Owner refunds and access
+
+**Decision.** "Refund" refunds the full charged amount through the order's gateway (`PaymentProvider.refund`). When the gateway confirms at once (Moyasar, PayPal, the fake gateway) the order is marked refunded and its access revoked in the same transaction as the audit row (`order.refund`); when the refund needs the gateway's review (Paddle adjustments) only `order.refund_requested` is audited and the refund webhook records it later. A gateway error changes nothing and shows "The payment gateway refused the refund". Zero-total orders have nothing to give back and are marked refunded directly. Per-item access: revoking touches only the entitlement that still points at that order item, so it never removes access a later re-purchase granted; granting from an order needs a paid order. Products granted from a customer's page have no order item ("Granted by you"). Every action is audited.
+
+## 2026-10-21 — Bans
+
+**Decision.** Banning sets `banned` and deletes every session in one transaction, so the customer is signed out everywhere at once; the session hook already refuses new sessions for banned accounts and the DAL treats them as signed out. Pages that only read may show the signed cookie cache for up to five minutes (spec §6.3); mutations, checkout and downloads always read the session fresh. The owner account cannot be banned, listed or granted products.
+
+## 2026-10-21 — Coupons in the dashboard
+
+**Decision.** Percent coupons take whole percents (1–100, the unit `couponDiscount` already used); fixed coupons take a USD amount, converted at the store rate for SAR charges. Codes are normalized to upper case, cannot change after creation (receipts and the audit log always name the same code) and coupons are never deleted, only deactivated, because orders reference them. Editing leaves the active flag alone; the coupon page switches it with its own button, and reservations already held stay valid. Start and end times are entered in Riyadh time. Usage shows uses, uses held by unpaid orders, the discount given on paid orders and the last 100 redemptions.
+
+## 2026-10-21 — Store settings, logos and legal pages
+
+**Decision.** Settings are one audited form per concern (store details with tax and limits; logos; exchange rate; gateways; each legal page). The tax rate is typed as a percent with up to two decimals and stored in basis points; "tax on" needs a rate above 0. Logos use the same verified upload pipeline as product images (pending key → storage-side checks → copy to `branding/{uuid}.{ext}` in the public bucket, at least 16 pixels a side, no SVG); upload tickets carry either a product or a logo purpose, never both, and a replaced logo is deleted. Each legal page is saved on its own, in both languages, sanitized with the product allowlist; blank editor output is stored as "". The storefront reads the name and logos through the cached settings query (tag `settings`), so pages stay static and refresh on the next request after a change. The audit row keeps the full legal text (it is the revision history); the viewer shortens long values for display.
+
+## 2026-10-21 — Customer account settings
+
+**Decision.** Email change, password change and account deletion are Server Actions that re-read the session from the database and check the current password through Better Auth (`auth.api.verifyPassword` / `changePassword`), with one per-account limit of 5 password checks per 15 minutes: server-side `auth.api` calls skip Better Auth's HTTP rate limiter. The HTTP endpoints `/change-email` and `/delete-user` stay disabled, so these checks cannot be skipped.
+
+- **Email change** (`user.changeEmail.enabled`): Better Auth sends a confirmation link to the new address (our "changeEmail" email, chosen in `sendVerificationEmail` because the account is already verified); the email changes only when it is opened. The answer is the same when the new address already has an account, and that address receives nothing. Opening the link signs the browser in, as Better Auth does for this flow; the link is single-purpose and went to an address the customer just proved they control with their password.
+- **Password change** signs out every other device; this browser gets a fresh session.
+- **Deletion** (spec §17.5 §5) removes the user, sessions, credential accounts and entitlements (download logs cascade) in one transaction; orders and items stay with `userId` set to null and their email snapshot, coupon redemptions keep their row with no user. A paid webhook for such an order still records the payment but grants nothing. The owner can never be deleted here.
+
+## 2026-10-21 — Genuine 404 status for the admin
+
+**Finding.** `export const instant = false` only opts a segment out of instant-navigation validation; it does not stop the response from streaming. Pages start streaming before the admin layout's `requireOwner()` resolves, so its `notFound()` rendered the 404 page with status 200 (and `noindex`) for signed-in customers, while guests already got a real 404 from the proxy. No admin content was ever sent, but the status told a customer that `/admin` exists.
+
+**Decision.** For admin paths the proxy now decides from the signed session cache when present and otherwise verifies the session cookie's signature and looks the token up (one indexed read): anything but a live owner session is rewritten to the 404 page before rendering, with status 404. If the lookup itself fails, the request continues and the layout decides as before. The proxy stays an optimistic layer; the layout and the DAL remain the security boundary.
+
+## 2026-10-21 — Destructive colour contrast
+
+**Decision.** The light theme's `--destructive` token is darkened from `oklch(0.577 0.245 27.325)` to `oklch(0.49 0.205 27.325)`, so destructive buttons and error alerts (text on a 10–20 % tint of the same colour) reach 4.66:1 or more, above WCAG AA's 4.5:1. The dark theme's token already passed.
+
+## 2026-10-21 — Shared admin helpers
+
+**Decision.** Admin tables share one server-rendered `Pagination` (previous/next links with the current page announced) and status badges for orders, customers and coupons. List filters are plain GET forms parsed with Zod (`.catch` defaults), so links are shareable and invalid values fall back instead of failing. Order, customer and coupon IDs in routes are checked against the UUID shape before any query.

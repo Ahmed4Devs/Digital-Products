@@ -365,3 +365,56 @@ pnpm dev     # buy a product with a file, then /ar/account/library and /ar/accou
 ### Next — Phase 8 (Remaining Dashboard)
 
 Overview metrics; orders (filters, details, resend receipt, refund, grant/revoke access); customers (purchases, ban); coupons; all settings; the audit-log viewer; customer account deletion that keeps financial records.
+
+## Phase 8 — Remaining Dashboard ✅ (tag `phase-08-dashboard`)
+
+**Completed:** 2026-10-21
+
+### Built
+
+- **Overview** (`/admin`): sales today (Riyadh calendar day) and over the last 30 days in USD with paid-order counts, orders awaiting payment, top products, recent orders, and a warning linking to orders paid after their coupon reached its limit.
+- **Orders** (`/admin/orders`, `/admin/orders/[id]`): filters by status, date range, coupon overshoot and order number or email; details with customer (or the email snapshot of a deleted account), gateway reference, coupon, rate, items with their access and download counts, totals and payment events. Actions: resend the receipt, refund through the gateway (Paddle reviews are recorded by its refund webhook), and grant or revoke an item's access.
+- **Customers** (`/admin/customers`, `/admin/customers/[id]`): list with status filters and email search; a customer's products (from which order, or granted), orders and total paid; ban (every session ends at once) and lift the ban; grant a product or revoke access. The owner account is never listed or affected.
+- **Coupons** (`/admin/coupons`, `new`, `[id]`): whole-percent or fixed USD discounts, minimum subtotal, total-use limit, per-customer rule and a Riyadh-time window; codes fixed once created; deactivate instead of delete; usage, held uses, discount given and redemptions.
+- **Settings**: bilingual store name, support email, optional tax with VAT number, downloads per minute and the unpaid-order expiry; light and dark logos through the verified upload pipeline; the five legal pages in both languages, each saved on its own and sanitized. The storefront header, footer, titles and Open Graph site name use the owner's name and logos and stay static.
+- **Audit log** (`/admin/audit`): every owner change with time, actor, translated action, a link to the record and the field-by-field diff; filters by section and record ID.
+- **Account page** (`/[locale]/account`): change the email (confirmed from the new address), change the password (other devices signed out) and delete the account (user, sessions, credentials and access removed in one transaction; orders and items kept with the email snapshot). Each action checks the password with a per-account limit; the matching HTTP endpoints stay disabled.
+- **Genuine 404s:** signed-in customers now get status 404 on every admin path (previously the 404 page with status 200; see DECISIONS).
+- **Accessibility:** destructive controls meet 4.5:1 in the light theme; checkboxes are labelled in the server HTML.
+
+### Tests
+
+| Suite                                                     | Count | Covers                                                                                                                                                                                                                                     |
+| --------------------------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Integration — `admin/orders.test.ts`                      | 10    | Non-owner refusals; refunds (gateway, zero-total, unpaid, pending review, gateway refusal, missing gateway); revoke and grant per item without touching a re-purchase; resend receipt through Mailpit; filters; details; Riyadh-day sales  |
+| Integration — `admin/customers.test.ts`                   | 6     | Non-owner refusals; the owner can never be banned or granted; ban ends sessions, unban, both audited; grant, duplicates, drafts, revoke, other customers' entitlements; list filters; details                                              |
+| Integration — `admin/coupons.test.ts`                     | 4     | Non-owner refusals; create (any case), duplicate codes, edit with audited diff, deactivate; validation and unknown coupons; list and usage                                                                                                 |
+| Integration — `admin/settings.test.ts`                    | 7     | Non-owner refusals for all six settings actions; details, tax and limits with audit and cache refresh; validation; legal pages one at a time, sanitized; logos verified, replaced and removed in MinIO; bad files; product tickets refused |
+| Integration — `admin/audit.test.ts`                       | 1     | Newest first, owner's username, filters                                                                                                                                                                                                    |
+| Integration — `account/settings.test.ts`                  | 6     | Guests redirected and the owner refused on all three actions; email change through the real confirmation link; existing addresses get nothing; password change signs out other devices; per-account limit; deletion keeps orders           |
+| Integration — `auth/proxy-lookup.test.ts`                 | 1     | Only a live owner session passes the proxy's lookup                                                                                                                                                                                        |
+| Unit — admin search, coupons, audit rows, settings, proxy | 20    | Filter parsing and Riyadh days; coupon form normalization and errors; coupon states; diff display; tax percent ↔ basis points; signed-token lookups and forged signatures in the proxy                                                     |
+| E2E — `dashboard-admin.spec.ts`                           | 9     | Order access, receipt and refund with the customer's library following; ban/unban/grant; coupon lifecycle and audit log; store name and logo on the storefront; 404 for guests and customers; axe on nine pages in ar/en × light/dark      |
+| E2E — `account.spec.ts`                                   | 7     | Email change via the link, password change and sign-in, account deletion; axe on the account page in ar/en × light/dark                                                                                                                    |
+
+Totals: **295 unit + 202 integration (Vitest), 113 E2E (Playwright)**. Coverage: 94.2 % lines overall.
+
+### Verification
+
+```bash
+pnpm services:up
+pnpm check
+pnpm test:e2e
+pnpm dev     # sign in at /ar/admin/sign-in, then the overview, orders, customers, coupons, settings and audit log
+```
+
+### Known limitations
+
+- Legal page content is stored and edited now; the public legal pages (`/[locale]/legal/[slug]`) with placeholder text arrive in Phase 9.
+- Refunds were exercised with the fake gateway and stubbed providers; real sandbox refunds need provider credentials (docs/SANDBOX_TESTING.md).
+- Pages that only read may show a banned customer's cached session for up to five minutes (signed cookie cache, spec §6.3); every mutation, checkout and download reads the session fresh.
+- `pnpm audit --prod`: no known vulnerabilities.
+
+### Next — Phase 9 (Quality and Security Hardening)
+
+Security headers and the two-policy CSP (nonces for the dynamic routes, a static policy for prerendered pages) with tests; rate-limit review; translated 404 and error pages; legal pages with placeholders; full E2E and accessibility pass; Lighthouse and bundle analysis; dependency audit; `docs/SECURITY.md`.
