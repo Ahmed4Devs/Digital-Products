@@ -11,15 +11,17 @@ const databaseUrl = configureTestDatabase();
 // Optional: a locally installed Chromium when the bundled revision cannot be downloaded.
 const chromiumExecutable = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 
-// Production build by default (closest to real behaviour); E2E_DEV=1 uses `next dev`
-// for faster iteration.
+// The database is reset and seeded before the build, because catalog pages are
+// prerendered from it. Production build by default (closest to real behaviour);
+// E2E_DEV=1 uses `next dev` for faster iteration. A server that is already running is
+// reused locally as is, without re-seeding.
+const prepareDatabase = "pnpm exec tsx tests/e2e/prepare-database.ts";
 const serverCommand = process.env.E2E_DEV
-  ? `pnpm exec next dev --port ${PORT}`
-  : `pnpm build && pnpm exec next start --port ${PORT}`;
+  ? `${prepareDatabase} && pnpm exec next dev --port ${PORT}`
+  : `${prepareDatabase} && pnpm build && pnpm exec next start --port ${PORT}`;
 
 export default defineConfig({
   testDir: "tests/e2e",
-  globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
