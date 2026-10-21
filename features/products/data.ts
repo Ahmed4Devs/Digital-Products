@@ -86,12 +86,12 @@ export async function findPublishedProductSlugs(db: PrismaClient, limit: number)
   });
 }
 
-export async function findProductBySlug(
+async function findProductDetail(
   db: PrismaClient,
-  slug: string,
+  where: Prisma.ProductWhereInput,
 ): Promise<ProductDetail | null> {
   const row = await db.product.findFirst({
-    where: { ...PUBLISHED, slug },
+    where,
     select: {
       ...summarySelect,
       descriptionAr: true,
@@ -118,6 +118,21 @@ export async function findProductBySlug(
     cover: cover ? strip(cover) : null,
     gallery: images.filter((image) => image.kind === "gallery").map(strip),
   };
+}
+
+export async function findProductBySlug(
+  db: PrismaClient,
+  slug: string,
+): Promise<ProductDetail | null> {
+  return findProductDetail(db, { ...PUBLISHED, slug });
+}
+
+/** Any status, for the owner's preview before publishing (never for the storefront). */
+export async function findProductPreview(
+  db: PrismaClient,
+  id: string,
+): Promise<ProductDetail | null> {
+  return findProductDetail(db, { id });
 }
 
 function orderFor(sort: ProductSearch["sort"]): Prisma.ProductOrderByWithRelationInput[] {
