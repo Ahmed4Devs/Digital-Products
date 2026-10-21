@@ -74,10 +74,18 @@ export function SignInForm() {
         label={t("fields.password")}
       />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label className="font-normal">
-          <Checkbox name="rememberMe" defaultChecked />
-          {t("fields.rememberMe")}
-        </Label>
+        <div className="flex items-center gap-2">
+          {/* Labelled explicitly: Base UI links a wrapping label only after hydration. */}
+          <Checkbox
+            id="sign-in-remember"
+            name="rememberMe"
+            defaultChecked
+            aria-labelledby="sign-in-remember-label"
+          />
+          <Label id="sign-in-remember-label" htmlFor="sign-in-remember" className="font-normal">
+            {t("fields.rememberMe")}
+          </Label>
+        </div>
         <Link
           href="/forgot-password"
           className="text-sm text-primary underline-offset-4 hover:underline"
