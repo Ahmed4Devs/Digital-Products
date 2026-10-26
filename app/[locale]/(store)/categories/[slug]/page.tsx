@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { Breadcrumbs } from "@/components/catalog/breadcrumbs";
 import { categoryHref } from "@/lib/seo/paths";
 import { EmptyState } from "@/components/catalog/empty-state";
@@ -49,7 +50,20 @@ export async function generateMetadata({
   });
 }
 
-export default async function CategoryPage({ params }: PageProps<"/[locale]/categories/[slug]">) {
+// The App Shell is shared by every category, so the slug is read inside <Suspense>.
+export default function CategoryPage({ params }: PageProps<"/[locale]/categories/[slug]">) {
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6">
+      <Suspense fallback={<CategorySkeleton />}>
+        <CategoryContent params={params} />
+      </Suspense>
+    </div>
+  );
+}
+
+async function CategoryContent({
+  params,
+}: Pick<PageProps<"/[locale]/categories/[slug]">, "params">) {
   const [locale, category, settings, t, product] = await Promise.all([
     getLocale(),
     loadCategory(params),
@@ -63,7 +77,7 @@ export default async function CategoryPage({ params }: PageProps<"/[locale]/cate
   const name = localized(locale, { ar: category.nameAr, en: category.nameEn });
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6">
+    <>
       <Breadcrumbs
         label={product("breadcrumb")}
         items={[{ label: product("home"), href: "/" }, { label: name }]}
@@ -88,6 +102,20 @@ export default async function CategoryPage({ params }: PageProps<"/[locale]/cate
       ) : (
         <EmptyState title={t("empty")} />
       )}
+    </>
+  );
+}
+
+function CategorySkeleton() {
+  return (
+    <div aria-hidden="true" className="flex animate-pulse flex-col gap-6">
+      <div className="h-5 w-40 rounded bg-muted" />
+      <div className="h-9 w-1/3 rounded-lg bg-muted" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 8 }, (_, index) => (
+          <div key={index} className="h-72 rounded-xl bg-muted" />
+        ))}
+      </div>
     </div>
   );
 }

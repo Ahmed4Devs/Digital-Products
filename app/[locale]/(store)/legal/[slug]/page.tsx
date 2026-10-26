@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Breadcrumbs } from "@/components/catalog/breadcrumbs";
 import { LtrText } from "@/components/shared/ltr-text";
 import { RICH_TEXT_CLASS, RichText } from "@/components/shared/rich-text";
@@ -52,7 +52,18 @@ const placeholderTags = {
   li: (chunks: ReactNode) => <li>{chunks}</li>,
 };
 
-export default async function LegalPage({ params }: PageProps<"/[locale]/legal/[slug]">) {
+// The App Shell is shared by every legal page, so the slug is read inside <Suspense>.
+export default function LegalPage({ params }: PageProps<"/[locale]/legal/[slug]">) {
+  return (
+    <article className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-12 sm:px-6">
+      <Suspense fallback={<LegalSkeleton />}>
+        <LegalContent params={params} />
+      </Suspense>
+    </article>
+  );
+}
+
+async function LegalContent({ params }: Pick<PageProps<"/[locale]/legal/[slug]">, "params">) {
   const [locale, slug, t] = await Promise.all([
     getLocale(),
     resolve(params),
@@ -65,7 +76,7 @@ export default async function LegalPage({ params }: PageProps<"/[locale]/legal/[
   const title = t(`pages.${page}.title`);
 
   return (
-    <article className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-12 sm:px-6">
+    <>
       <Breadcrumbs
         label={t("breadcrumb")}
         items={[{ label: t("home"), href: "/" }, { label: title }]}
@@ -95,6 +106,20 @@ export default async function LegalPage({ params }: PageProps<"/[locale]/legal/[
           })}
         </p>
       ) : null}
-    </article>
+    </>
+  );
+}
+
+function LegalSkeleton() {
+  return (
+    <div aria-hidden="true" className="flex animate-pulse flex-col gap-6">
+      <div className="h-5 w-40 rounded bg-muted" />
+      <div className="h-9 w-2/3 rounded-lg bg-muted" />
+      <div className="flex flex-col gap-3">
+        {Array.from({ length: 6 }, (_, index) => (
+          <div key={index} className="h-4 rounded bg-muted" />
+        ))}
+      </div>
+    </div>
   );
 }

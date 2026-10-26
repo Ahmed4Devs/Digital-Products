@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { PurchaseButton } from "@/components/cart/purchase-button";
 import { Breadcrumbs } from "@/components/catalog/breadcrumbs";
 import { ProductDetailView } from "@/components/catalog/product-detail";
@@ -60,7 +61,16 @@ export async function generateMetadata({
   });
 }
 
-export default async function ProductPage({ params }: PageProps<"/[locale]/products/[slug]">) {
+// The App Shell is shared by every product, so the slug is read inside <Suspense>.
+export default function ProductPage({ params }: PageProps<"/[locale]/products/[slug]">) {
+  return (
+    <Suspense fallback={<ProductSkeleton />}>
+      <ProductContent params={params} />
+    </Suspense>
+  );
+}
+
+async function ProductContent({ params }: Pick<PageProps<"/[locale]/products/[slug]">, "params">) {
   const [locale, product, settings, t] = await Promise.all([
     getLocale(),
     loadProduct(params),
@@ -111,5 +121,27 @@ export default async function ProductPage({ params }: PageProps<"/[locale]/produ
         />
       }
     />
+  );
+}
+
+/** Footprint of ProductDetailView: breadcrumbs, then the 4:3 cover beside the details. */
+function ProductSkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="mx-auto flex w-full max-w-6xl animate-pulse flex-col gap-8 px-4 py-10 sm:px-6"
+    >
+      <div className="h-5 w-56 rounded bg-muted" />
+      <div className="grid gap-8 lg:grid-cols-2">
+        <div className="aspect-4/3 rounded-xl bg-muted" />
+        <div className="flex flex-col gap-4">
+          <div className="h-4 w-24 rounded bg-muted" />
+          <div className="h-9 w-3/4 rounded-lg bg-muted" />
+          <div className="h-6 rounded bg-muted" />
+          <div className="h-8 w-32 rounded-lg bg-muted" />
+          <div className="h-10 rounded-lg bg-muted" />
+        </div>
+      </div>
+    </div>
   );
 }
