@@ -45,6 +45,28 @@ test("unknown pages get the translated 404 with a real status", async ({ page })
   await expect(page).toHaveURL(/\/ar\/products$/);
 });
 
+// HTML-limited bots skip the prerendered pages and are rendered on demand with blocking
+// metadata, so the status they see comes from a different path than a browser's.
+test("crawlers that cannot run JavaScript get the same statuses", async ({ request }) => {
+  for (const userAgent of [
+    "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+    "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+  ]) {
+    const headers = { "user-agent": userAgent };
+    for (const path of [
+      "/en/products/no-such-product",
+      "/en/products/unreleased-course",
+      "/ar/categories/no-such-category",
+      "/en/legal/cookies",
+    ]) {
+      expect((await request.get(path, { headers })).status(), `${userAgent} ${path}`).toBe(404);
+    }
+    for (const path of ["/en/products/free-wallpapers", "/ar/legal/terms"]) {
+      expect((await request.get(path, { headers })).status(), `${userAgent} ${path}`).toBe(200);
+    }
+  }
+});
+
 for (const locale of ["ar", "en"] as const) {
   for (const scheme of ["light", "dark"] as const) {
     test(`legal and 404 pages have no WCAG 2.2 AA violations · ${locale} · ${scheme}`, async ({

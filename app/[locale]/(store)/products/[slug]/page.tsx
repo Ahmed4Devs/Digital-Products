@@ -39,7 +39,10 @@ export async function generateMetadata({
     loadProduct(params),
     getStoreBranding(),
   ]);
-  if (!product) return {};
+  // HTML-limited bots (Bingbot, link previews) get blocking metadata, resolved before the
+  // page streams. The page's own check sits behind <Suspense>, after the status is sent,
+  // so this is what gives them a genuine 404.
+  if (!product) notFound();
 
   const title = localized(locale, { ar: product.titleAr, en: product.titleEn });
   const seoTitle = localized(locale, { ar: product.seoTitleAr, en: product.seoTitleEn });

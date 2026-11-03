@@ -39,7 +39,8 @@ export async function generateMetadata({
     loadCategory(params),
     getTranslations("store.category"),
   ]);
-  if (!category) return {};
+  // Genuine 404 for HTML-limited bots, as on the product page.
+  if (!category) notFound();
 
   const name = localized(locale, { ar: category.nameAr, en: category.nameEn });
   return pageMetadata({

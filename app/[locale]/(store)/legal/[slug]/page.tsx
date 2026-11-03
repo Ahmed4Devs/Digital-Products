@@ -34,7 +34,8 @@ export async function generateMetadata({
     getTranslations("store.legal.pages"),
     getStoreBranding(),
   ]);
-  if (!slug) return {};
+  // Genuine 404 for HTML-limited bots, as on the product page.
+  if (!slug) notFound();
   const page = LEGAL_SLUGS[slug];
   return pageMetadata({
     locale,

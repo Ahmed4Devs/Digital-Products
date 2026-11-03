@@ -644,3 +644,11 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 ## 2026-10-21 — First release version
 
 **Decision.** The owner chose `1.0.0` as the first release instead of `1.0.0-rc.1`, the release candidate the spec named for Phase 10. `package.json` and the tag use `1.0.0`. The go-live checklist in DEPLOYMENT.md still applies before real customers use the store; fixes found there ship as `1.0.x`.
+
+## 2026-11-03 — Genuine 404 for crawlers that get blocking metadata
+
+**Finding.** Product, category and legal pages read their slug inside `<Suspense>` so the App Shell stays shared by every slug (instant navigation). Browsers and Googlebot still get a real 404 for an unknown slug, because `ensureStatic = "navigation"` makes Next.js finish the static render before it answers. HTML-limited bots (Bingbot, DuckDuckBot, Yandex, Applebot, Google-InspectionTool, link previews such as facebookexternalhit, WhatsApp and Slackbot) skip the prerendered pages and are rendered on demand: the page's `notFound()` fired after streaming had started, so they saw the 404 page with status 200 and `noindex`.
+
+**Decision.** `generateMetadata` on those pages calls `notFound()` when the product, category or legal page does not exist, instead of returning empty metadata. Metadata blocks rendering for these bots, so it resolves before the page streams and the status is a real 404; for everyone else nothing changes. An E2E test checks the statuses with two such user agents.
+
+**Accepted.** In the dynamic `(secure)` group, metadata streams to browsers, so an unknown id on a page the signed-in owner or customer can open (an admin order, customer, coupon or product; a checkout result) renders the 404 page with status 200 and `noindex`. These pages are private and never indexed, nothing of the record is sent, and everyone but the owner still gets a real 404 for `/admin` from the proxy.
