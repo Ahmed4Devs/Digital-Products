@@ -117,4 +117,4 @@ To report a vulnerability, email the store's support address (Settings → Suppo
 - **Third-party origins on checkout** (Paddle) and sign-up (Turnstile) follow the providers' documentation and must be confirmed in the sandbox runs (`SANDBOX_TESTING.md`).
 - **HSTS without `preload`:** joining the preload list is a separate, hard-to-undo decision for the production domain.
 - **No owner TOTP yet:** `requireOwner()` is the single place to add it.
-- **Development-only advisory:** `braces` (GHSA-vfj7-8cjw-p6xm, no patched version) reaches the tree through ESLint's Next.js plugin and the shadcn CLI. Both only expand the project's own glob patterns during development and are not part of the built application.
+- **Development-only advisories** with no fix that the tools can take: `minimatch` 3 and 10 (GHSA-g3hv-75wg-m249, fixed only in 11) through ESLint, and `deepmerge` (GHSA-gcqx-w48m-w2h4, no patched version) through the shadcn CLI. ESLint matches the project's own config patterns and shadcn merges the project's own config files, only when a developer runs them; neither is part of the built application. `pnpm audit --prod` is clean.

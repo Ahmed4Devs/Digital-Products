@@ -16,3 +16,9 @@ allowBuilds:
   # Used by tsx (CLI scripts) and react-email's preview CLI. The platform binary comes
   # from optionalDependencies, so its install-time check is not needed.
   esbuild: false
+
+overrides:
+  # react-email's CLI imports glob 13 (and through it minimatch 10) but never calls it;
+  # glob 14 with minimatch 11 carries the fixes for GHSA-3g3m-2fjr-6pw4 and
+  # GHSA-g3hv-75wg-m249. Drop this once react-email depends on glob 14 itself.
+  "react-email>glob": "^14.0.2"

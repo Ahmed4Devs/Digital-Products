@@ -652,3 +652,16 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 **Decision.** `generateMetadata` on those pages calls `notFound()` when the product, category or legal page does not exist, instead of returning empty metadata. Metadata blocks rendering for these bots, so it resolves before the page streams and the status is a real 404; for everyone else nothing changes. An E2E test checks the statuses with two such user agents.
 
 **Accepted.** In the dynamic `(secure)` group, metadata streams to browsers, so an unknown id on a page the signed-in owner or customer can open (an admin order, customer, coupon or product; a checkout result) renders the 404 page with status 200 and `noindex`. These pages are private and never indexed, nothing of the record is sent, and everyone but the owner still gets a real 404 for `/admin` from the proxy.
+
+## 2026-11-03 — Audit findings after 1.0.0
+
+**Finding.** `pnpm audit --prod` reported seven advisories that appeared after the release, all in transitive dependencies: `fast-uri` < 3.1.9 (four, through Prisma's local dev server), `deepmerge` ≤ 4.3.1 (no patched version, through `react-email` → `@react-email/render` 2.1 → `html-to-text` 9), and `glob` 13 with `minimatch` 10 (through the `react-email` CLI).
+
+**Decision.**
+
+- `react-email` 6.11.6 requires `@react-email/render` 2.2, whose `html-to-text` 10 uses `deepmerge-ts` instead of `deepmerge`.
+- `fast-uri` 3.1.9 is within `ajv`'s range, so the lockfile takes it without an override.
+- An override (`pnpm-workspace.yaml`) gives `react-email` glob 14 and, through it, minimatch 11. glob 14 changes its API, but the CLI only imports glob and never calls it (checked in 6.11.6). Remove the override once `react-email` depends on glob 14 itself.
+- In development dependencies, `body-parser` 2.4 and `systeminformation` 5.33.19 (both through the shadcn CLI) are within their ranges.
+
+**Accepted.** Two development-only advisories have no fix the tools can take: `minimatch` 3 and 10 through ESLint (fixed only in minimatch 11, which ESLint 9 and 10 do not use) and `deepmerge` through the shadcn CLI. See SECURITY.md. The `braces` advisory above is no longer reported. No ignore rule is configured, so the findings stay visible.
