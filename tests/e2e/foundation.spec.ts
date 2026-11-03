@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { withCachedFonts } from "@/tests/support/e2e-fonts";
+import { hydrated } from "@/tests/support/e2e-hydration";
 import { expect, test, type Page } from "@playwright/test";
 
 const LOCALES = [
@@ -126,7 +127,7 @@ test.describe("theme toggle", () => {
       await page.goto(`/${locale}`);
       await expect(page.locator("html")).toHaveClass(/\blight\b/);
 
-      const trigger = page.getByRole("button", { name: themeLabel });
+      const trigger = await hydrated(page.getByRole("button", { name: themeLabel }));
       await trigger.focus();
       await page.keyboard.press("Enter");
       const dark = page.getByRole("menuitemradio", { name: darkLabel });

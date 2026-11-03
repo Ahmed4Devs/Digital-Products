@@ -509,3 +509,31 @@ The local image was built on `node:24-bookworm`: this environment's network poli
 ### Release
 
 `v1.0.0` is the first release: every phase of the plan is complete, documented and tested. The owner chose a final version over the release candidate the spec named (see DECISIONS.md).
+
+## Maintenance after 1.0.0
+
+**2026-11-03**, branch `fix/next-16.4.4-404-audit`. Not released yet; per DECISIONS (first release version) these fixes ship as `1.0.x`.
+
+### Changed
+
+- **Next.js 16.4.4** (and `eslint-config-next`): patch releases with bug fixes, among them the CSP nonce on Turbopack's runtime bootstrap in the PPR resume.
+- **Genuine 404 for crawlers that cannot run JavaScript** on unknown product, category and legal pages: they were served the 404 page with status 200 (DECISIONS, 2026-11-03).
+- **Audit:** `pnpm audit --prod` clean again (react-email 6.11.6, fast-uri 3.1.9, an override for the react-email CLI's glob); two development-only findings remain without a usable fix (DECISIONS, SECURITY).
+- **E2E stability:** `tests/support/e2e-hydration.ts` waits until React has hydrated a client component's control before a spec clicks it or presses a key on it (cart, checkout, the fake gateway, the theme toggle). On a busy machine those inputs could arrive before hydration and do nothing.
+- **Windows visual baselines** regenerated from the current build (home, sign-in, product); each matches its Linux baseline in size and content.
+
+### Verification
+
+| Check                              | Result                                                                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Format, lint, typecheck            | Pass                                                                                                                            |
+| Vitest                             | 311 unit + 203 integration pass; 93.9 % lines covered                                                                           |
+| Playwright (Windows, 8 workers)    | 125 tests. Two full runs: all passed, then 124 passed with 1 failure (see below)                                                |
+| Statuses for crawlers              | Unknown product, category and legal pages: 404 for Bingbot, Google-InspectionTool, facebookexternalhit, WhatsApp and Twitterbot |
+| `pnpm audit --prod` / `pnpm audit` | Clean / two development-only findings                                                                                           |
+
+### Known limitations
+
+- Once in two full runs, "settings: the store name and logo show on the storefront at once" saw the old store name on the home page right after saving. It passed 3 of 3 times on its own. The settings actions call `updateTag` correctly; the likely cause is a home page render started by a parallel spec (publishing products) before the save and stored after it. If it recurs, check how Next.js orders an in-flight render against `updateTag`.
+- In the `(secure)` group, an unknown id on a page the signed-in owner or customer can open still answers 200 with the 404 page and `noindex` (DECISIONS, 2026-11-03).
+- Real sandbox runs with each gateway (SANDBOX_TESTING.md) are still pending.

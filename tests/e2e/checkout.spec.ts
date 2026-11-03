@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { createCoupon } from "@/tests/support/checkout";
+import { hydrated } from "@/tests/support/e2e-hydration";
 import { e2eDb } from "@/tests/support/e2e-db";
 import { signInContext } from "@/tests/support/e2e-session";
 import { createCustomer } from "@/tests/support/users";
@@ -23,7 +24,7 @@ test("cart → coupon → fake payment → webhook → My Purchases", async ({ p
   const coupon = await createCoupon(e2eDb(), { type: "percent", value: 50, usageLimit: 10 });
 
   await page.goto("/en/products/monthly-budget-planner");
-  await page.getByRole("button", { name: "Add to cart" }).click();
+  await (await hydrated(page.getByRole("button", { name: "Add to cart" }))).click();
   await expect(page.getByText("Added to your cart.")).toBeVisible();
   await expect(page.getByRole("link", { name: /^Cart\s*items: 1$/ })).toBeVisible();
 
@@ -38,7 +39,7 @@ test("cart → coupon → fake payment → webhook → My Purchases", async ({ p
   await expect(page).toHaveURL(/\/en\/checkout$/);
   await expect(page.getByRole("radio", { name: /Test payment/ })).toBeChecked();
   await page.getByLabel("Coupon code").fill(coupon.code.toLowerCase());
-  await page.getByRole("button", { name: "Apply" }).click();
+  await (await hydrated(page.getByRole("button", { name: "Apply" }))).click();
   await expect(page.getByText("Coupon applied.")).toBeVisible();
   await expect(
     main(page)
@@ -46,10 +47,10 @@ test("cart → coupon → fake payment → webhook → My Purchases", async ({ p
       .filter({ hasText: /^\$6\.00$/ }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Pay now" }).click();
+  await (await hydrated(page.getByRole("button", { name: "Pay now" }))).click();
   await expect(page).toHaveURL(/\/en\/checkout\/fake\?reference=fake_/);
   await expect(main(page)).toContainText("Amount: $6.00");
-  await page.getByRole("button", { name: "Pay", exact: true }).click();
+  await (await hydrated(page.getByRole("button", { name: "Pay", exact: true }))).click();
 
   // The result page polls until the webhook has marked the order paid.
   await expect(page).toHaveURL(/\/en\/account\/library$/, { timeout: 20_000 });
@@ -70,7 +71,7 @@ test("cart → coupon → fake payment → webhook → My Purchases", async ({ p
 
   // Bought products cannot be bought again.
   await page.goto("/en/products/monthly-budget-planner");
-  await page.getByRole("button", { name: "Add to cart" }).click();
+  await (await hydrated(page.getByRole("button", { name: "Add to cart" }))).click();
   await expect(page.getByText("Added to your cart.")).toBeVisible();
   await page.goto("/en/checkout");
   await expect(main(page)).toContainText("Your cart is empty.");
@@ -83,12 +84,12 @@ test("guests are sent to sign in and come back to checkout", async ({ page }) =>
 
 test("free products are claimed without a gateway", async ({ page, baseURL }) => {
   await page.goto("/en/products/free-wallpapers");
-  await page.getByRole("button", { name: "Get it free" }).click();
+  await (await hydrated(page.getByRole("button", { name: "Get it free" }))).click();
   await expect(page).toHaveURL(/\/en\/sign-in\?next=%2Fproducts%2Ffree-wallpapers$/);
 
   await signedInCustomer(page, baseURL!);
   await page.goto("/en/products/free-wallpapers");
-  await page.getByRole("button", { name: "Get it free" }).click();
+  await (await hydrated(page.getByRole("button", { name: "Get it free" }))).click();
   await expect(page).toHaveURL(/\/en\/account\/library$/, { timeout: 20_000 });
   await expect(main(page)).toContainText("Free Wallpapers");
 });
@@ -96,11 +97,11 @@ test("free products are claimed without a gateway", async ({ page, baseURL }) =>
 test("a declined payment leaves the order unpaid", async ({ page, baseURL }) => {
   const customer = await signedInCustomer(page, baseURL!);
   await page.goto("/ar/products/social-media-design-kit");
-  await page.getByRole("button", { name: "أضف إلى السلة" }).click();
+  await (await hydrated(page.getByRole("button", { name: "أضف إلى السلة" }))).click();
   await expect(page.getByText("أُضيف إلى سلتك.")).toBeVisible();
   await page.goto("/ar/checkout");
-  await page.getByRole("button", { name: "ادفع الآن" }).click();
-  await page.getByRole("button", { name: "ارفض" }).click();
+  await (await hydrated(page.getByRole("button", { name: "ادفع الآن" }))).click();
+  await (await hydrated(page.getByRole("button", { name: "ارفض" }))).click();
   await expect(main(page).getByRole("alert")).toContainText("لم تتم عملية الدفع", {
     timeout: 20_000,
   });
@@ -116,10 +117,10 @@ test("the order status endpoint answers only the order's owner", async ({
 }) => {
   const customer = await signedInCustomer(page, baseURL!);
   await page.goto("/en/products/pricing-freelance-work");
-  await page.getByRole("button", { name: "Add to cart" }).click();
+  await (await hydrated(page.getByRole("button", { name: "Add to cart" }))).click();
   await expect(page.getByText("Added to your cart.")).toBeVisible();
   await page.goto("/en/checkout");
-  await page.getByRole("button", { name: "Pay now" }).click();
+  await (await hydrated(page.getByRole("button", { name: "Pay now" }))).click();
   await expect(page).toHaveURL(/checkout\/fake/);
   const order = await e2eDb().order.findFirstOrThrow({ where: { userId: customer.id } });
 
@@ -144,9 +145,11 @@ for (const locale of ["ar", "en"] as const) {
       await page.emulateMedia({ colorScheme: scheme });
       await signedInCustomer(page, baseURL!);
       await page.goto(`/${locale}/products/arabic-typography-guide`);
-      await page
-        .getByRole("button", { name: locale === "ar" ? "أضف إلى السلة" : "Add to cart" })
-        .click();
+      await (
+        await hydrated(
+          page.getByRole("button", { name: locale === "ar" ? "أضف إلى السلة" : "Add to cart" }),
+        )
+      ).click();
       await expect(page.getByRole("status").or(page.getByRole("alert")).first()).toBeVisible();
       for (const path of ["/cart", "/checkout"]) {
         await page.goto(`/${locale}${path}`);
