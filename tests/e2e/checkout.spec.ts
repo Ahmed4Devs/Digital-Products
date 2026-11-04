@@ -39,7 +39,9 @@ test("cart → coupon → fake payment → webhook → My Purchases", async ({ p
   await main(page).getByRole("link", { name: "Checkout" }).click();
   await expect(page).toHaveURL(/\/en\/checkout$/);
   await expect(page.getByRole("radio", { name: /Test payment/ })).toBeChecked();
-  await page.getByLabel("Coupon code").fill(coupon.code.toLowerCase());
+  // Typed before hydration, the code would never reach the form's state and "Apply" would
+  // stay disabled.
+  await (await hydrated(page.getByLabel("Coupon code"))).fill(coupon.code.toLowerCase());
   await (await hydrated(page.getByRole("button", { name: "Apply" }))).click();
   await expect(page.getByText("Coupon applied.")).toBeVisible();
   await expect(

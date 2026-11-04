@@ -538,4 +538,5 @@ The local image was built on `node:24-bookworm`: this environment's network poli
 ### Known limitations
 
 - "settings: the store name and logo show on the storefront at once" sometimes saw the old name or logo on the home page right after saving: twice in the runs of 2026-11-03 and 2026-11-04, first before the status change above, and only when other owner specs ran in parallel. It passed 3 of 3 times on its own. The settings actions call `updateTag` correctly; the likely cause is a home page render started by a parallel spec (publishing products) before the save and stored after it. If it recurs, check how Next.js orders an in-flight render against `updateTag`.
+- A coupon code typed before the checkout form hydrates shows in the field but stays out of the form's state, so "Apply" stays disabled until the field is edited again. A spec hit this on a busy machine; a customer on a slow connection could too.
 - Real sandbox runs with each gateway (SANDBOX_TESTING.md) are still pending.
