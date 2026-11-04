@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { HTML_LIMITED_BOTS } from "./lib/proxy/blocking-render";
 import {
   cspContextFromEnv,
   securityHeaders,
@@ -37,6 +38,9 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   typedRoutes: true,
   poweredByHeader: false,
+  // Next.js' default list plus the marker proxy.ts adds to page loads of the (secure)
+  // group, so notFound() and redirect() there keep their status (blocking-render.ts).
+  htmlLimitedBots: HTML_LIMITED_BOTS,
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [75],

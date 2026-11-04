@@ -651,7 +651,7 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 
 **Decision.** `generateMetadata` on those pages calls `notFound()` when the product, category or legal page does not exist, instead of returning empty metadata. Metadata blocks rendering for these bots, so it resolves before the page streams and the status is a real 404; for everyone else nothing changes. An E2E test checks the statuses with two such user agents.
 
-**Accepted.** In the dynamic `(secure)` group, metadata streams to browsers, so an unknown id on a page the signed-in owner or customer can open (an admin order, customer, coupon or product; a checkout result) renders the 404 page with status 200 and `noindex`. These pages are private and never indexed, nothing of the record is sent, and everyone but the owner still gets a real 404 for `/admin` from the proxy.
+**Accepted at first.** In the `(secure)` group an unknown id still answered 200 for signed-in users. Fixed the next day: see "Real statuses in the `(secure)` group".
 
 ## 2026-11-03 — Audit findings after 1.0.0
 
@@ -665,3 +665,14 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 - In development dependencies, `body-parser` 2.4 and `systeminformation` 5.33.19 (both through the shadcn CLI) are within their ranges.
 
 **Accepted.** Two development-only advisories have no fix the tools can take: `minimatch` 3 and 10 through ESLint (fixed only in minimatch 11, which ESLint 9 and 10 do not use) and `deepmerge` through the shadcn CLI. See SECURITY.md. The `braces` advisory above is no longer reported. No ignore rule is configured, so the findings stay visible.
+
+## 2026-11-04 — Real statuses in the `(secure)` group
+
+**Finding.** With Cache Components every route is partially prerendered, so even the `(secure)` pages, whose root layout waits for `connection()`, have a prerendered (empty) shell. A browser is sent that shell first, which fixes the status at 200; a `notFound()` or `redirect()` in the page then only renders the 404 page or redirects on the client. Signed-in owners and customers saw unknown admin records, checkout results for other customers' orders and, for the owner, the account area as the 404 page with status 200. HTML-limited bots got the real status because Next.js skips the shell for them (`shouldForceDynamicPPRRender` in its page handler). This is also the cause behind the admin finding of 2026-10-21. There is no per-route option to turn the shell off.
+
+**Decision.** proxy.ts appends a marker (`StoreBlockingRender`) to the User-Agent of page loads of the nonce routes (GET or HEAD requests that accept HTML), and `htmlLimitedBots` in next.config.ts is Next.js' default list plus that marker. Those requests skip the shell and render in one blocking pass, like a bot's, so every `notFound()` and `redirect()` in the group, present or future, keeps its 404 or 307 status. The pages render per request anyway and the shell was empty, so nothing is lost.
+
+- Client navigations and prefetches are not marked: they keep their normal path, and a marked prefetch left the router waiting on a response it never finished reading. Next.js removes the RSC headers before the proxy runs, so they are told apart by their `Accept` header (`*/*`; a page load asks for `text/html`). Server Actions (POST) are not marked either, so sessions created in actions keep the real User-Agent. Nothing in a page render reads the User-Agent.
+- A client that does not ask for HTML (for example `curl` without an `Accept` header) still gets the shell and a 200 for a missing record; browsers and crawlers ask for HTML.
+- `htmlLimitedBots` replaces Next.js' list, so `lib/proxy/blocking-render.ts` copies it; a unit test compares the copy with Next.js' own and fails after an upgrade that changes it.
+- Rejected: checking each record in the proxy before rendering (Next.js' suggestion for slugs). It would repeat every page's lookups and ownership rules there and miss new pages.

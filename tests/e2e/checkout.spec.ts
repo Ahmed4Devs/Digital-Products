@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { createCoupon } from "@/tests/support/checkout";
 import { hydrated } from "@/tests/support/e2e-hydration";
+import { createPaidOrder } from "@/tests/support/orders";
 import { e2eDb } from "@/tests/support/e2e-db";
 import { signInContext } from "@/tests/support/e2e-session";
 import { createCustomer } from "@/tests/support/users";
@@ -108,6 +109,27 @@ test("a declined payment leaves the order unpaid", async ({ page, baseURL }) => 
   const order = await e2eDb().order.findFirstOrThrow({ where: { userId: customer.id } });
   expect(order.status).toBe("failed");
   expect(await e2eDb().entitlement.count({ where: { userId: customer.id } })).toBe(0);
+});
+
+test("the result page answers a real 404 for orders that are not the customer's", async ({
+  page,
+  baseURL,
+}) => {
+  const someoneElse = await createCustomer(e2eDb());
+  const product = await e2eDb().product.findUniqueOrThrow({
+    where: { slug: "monthly-budget-planner" },
+  });
+  const theirs = await createPaidOrder(e2eDb(), { user: someoneElse, products: [product] });
+  await signedInCustomer(page, baseURL!);
+  for (const path of [
+    "/en/checkout/result",
+    "/en/checkout/result?order=not-an-id",
+    "/en/checkout/result?order=00000000-0000-4000-8000-000000000000",
+    `/ar/checkout/result?order=${theirs.id}`,
+  ]) {
+    expect((await page.goto(path))?.status(), path).toBe(404);
+  }
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("لم نعثر على هذه الصفحة");
 });
 
 test("the order status endpoint answers only the order's owner", async ({

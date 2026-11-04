@@ -1,6 +1,7 @@
 import { makeSignature } from "better-auth/crypto";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { BLOCKING_RENDER_MARKER } from "@/lib/proxy/blocking-render";
 import { createProxy } from "@/lib/proxy/create-proxy";
 import proxy from "@/proxy";
 
@@ -129,6 +130,52 @@ describe("CSP nonces", () => {
     const response = await proxy(request("/en/products"));
     expect(response.headers.get("content-security-policy")).toBeNull();
     expect(response.headers.get("x-middleware-request-x-nonce")).toBeNull();
+  });
+});
+
+describe("blocking render for page loads of the (secure) group", () => {
+  const BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0";
+  // What a browser sends for a page load. Next.js strips the RSC headers before the proxy
+  // runs, so a client navigation or prefetch arrives as a plain fetch that accepts `*/*`.
+  const PAGE_LOAD = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+  const load = (path: string, headers: Record<string, string> = {}) =>
+    proxy(
+      new NextRequest(new URL(path, "http://localhost:3000"), {
+        headers: { "user-agent": BROWSER, accept: PAGE_LOAD, cookie: SESSION_COOKIE, ...headers },
+      }),
+    );
+  const forwardedUserAgent = (response: Response) =>
+    response.headers.get("x-middleware-request-user-agent");
+
+  it("marks page loads and keeps the real User-Agent in front", async () => {
+    for (const path of ["/en/sign-in", "/ar/account", "/en/checkout/result?order=x"]) {
+      expect(forwardedUserAgent(await load(path)), path).toBe(
+        `${BROWSER} ${BLOCKING_RENDER_MARKER}`,
+      );
+    }
+    const anonymous = await proxy(
+      new NextRequest(new URL("/en/sign-in", "http://localhost:3000"), {
+        headers: { accept: PAGE_LOAD },
+      }),
+    );
+    expect(forwardedUserAgent(anonymous)).toBe(BLOCKING_RENDER_MARKER);
+  });
+
+  it("leaves client navigations, Server Actions and catalog pages alone", async () => {
+    expect(forwardedUserAgent(await load("/en/account", { accept: "*/*" }))).toBe(BROWSER);
+
+    const action = await proxy(
+      new NextRequest(new URL("/en/checkout", "http://localhost:3000"), {
+        method: "POST",
+        headers: { "user-agent": BROWSER, cookie: SESSION_COOKIE, "next-action": "abc" },
+        body: "[]",
+      }),
+    );
+    expect(forwardedUserAgent(action)).toBe(BROWSER);
+
+    expect(forwardedUserAgent(await load("/en/products")) ?? "").not.toContain(
+      BLOCKING_RENDER_MARKER,
+    );
   });
 });
 

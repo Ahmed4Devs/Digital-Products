@@ -152,8 +152,8 @@ app/api/downloads/   the secure download gateway (ownership, limit, log, pre-sig
 app/api/health/      readiness probe
 app/sitemap.ts       /sitemap.xml (both languages, hreflang alternates)
 app/robots.ts        /robots.txt
-proxy.ts             locale negotiation, optimistic redirects, genuine admin 404s and CSP nonces
-                     (logic in lib/proxy; never a security boundary)
+proxy.ts             locale negotiation, optimistic redirects, genuine admin 404s, CSP nonces and
+                     blocking renders for real statuses (logic in lib/proxy; never a security boundary)
 i18n/                routing, navigation helpers, shared formats, request config
 messages/{ar,en}/    translations split by domain (common, store, auth, account, admin, emails)
 components/admin/    dashboard navigation, product form, lazy rich-text editor and emoji picker,

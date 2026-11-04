@@ -211,6 +211,30 @@ test("guests and customers never see the new dashboard pages", async ({ browser,
   await signedIn.close();
 });
 
+// Dynamic pages are served a prerendered shell first, which fixed their status at 200
+// before notFound() ran (see lib/proxy/blocking-render.ts).
+test("unknown records answer the owner with a real 404", async ({ page }) => {
+  const missing = "00000000-0000-4000-8000-000000000000";
+  for (const path of [
+    `/en/admin/orders/${missing}`,
+    "/en/admin/orders/not-an-id",
+    `/en/admin/customers/${missing}`,
+    `/en/admin/coupons/${missing}`,
+    `/en/admin/products/${missing}`,
+    `/en/admin/products/${missing}/preview`,
+    // The owner has no customer account.
+    "/en/account",
+  ]) {
+    const response = await page.goto(path);
+    expect(response?.status(), path).toBe(404);
+    await expect(page.getByRole("heading", { level: 1 }), path).toHaveText(
+      "We couldn't find this page",
+    );
+  }
+  const { order } = await paidOrder();
+  expect((await page.goto(`/en/admin/orders/${order.id}`))?.status()).toBe(200);
+});
+
 for (const locale of ["ar", "en"] as const) {
   for (const scheme of ["light", "dark"] as const) {
     test(`orders, customers, coupons and audit have no WCAG 2.2 AA violations · ${locale} · ${scheme}`, async ({

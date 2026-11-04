@@ -520,20 +520,22 @@ The local image was built on `node:24-bookworm`: this environment's network poli
 - **Genuine 404 for crawlers that cannot run JavaScript** on unknown product, category and legal pages: they were served the 404 page with status 200 (DECISIONS, 2026-11-03).
 - **Audit:** `pnpm audit --prod` clean again (react-email 6.11.6, fast-uri 3.1.9, an override for the react-email CLI's glob); two development-only findings remain without a usable fix (DECISIONS, SECURITY).
 - **E2E stability:** `tests/support/e2e-hydration.ts` waits until React has hydrated a client component's control before a spec clicks it or presses a key on it (cart, checkout, the fake gateway, the theme toggle). On a busy machine those inputs could arrive before hydration and do nothing.
+- **Real 404 and 307 statuses in the `(secure)` group** (2026-11-04): page loads there skip the prerendered shell, so unknown admin records, other customers' checkout results and the account area for the owner answer 404 instead of 200 (DECISIONS, 2026-11-04).
 - **Windows visual baselines** regenerated from the current build (home, sign-in, product); each matches its Linux baseline in size and content.
 
 ### Verification
 
-| Check                              | Result                                                                                                                          |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Format, lint, typecheck            | Pass                                                                                                                            |
-| Vitest                             | 311 unit + 203 integration pass; 93.9 % lines covered                                                                           |
-| Playwright (Windows, 8 workers)    | 125 tests. Two full runs: all passed, then 124 passed with 1 failure (see below)                                                |
-| Statuses for crawlers              | Unknown product, category and legal pages: 404 for Bingbot, Google-InspectionTool, facebookexternalhit, WhatsApp and Twitterbot |
-| `pnpm audit --prod` / `pnpm audit` | Clean / two development-only findings                                                                                           |
+| Check                              | Result                                                                                                                                               |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Format, lint, typecheck            | Pass                                                                                                                                                 |
+| Vitest                             | 315 unit + 203 integration pass                                                                                                                      |
+| Playwright (Windows)               | 127 tests, all pass with 4 workers. With 8 workers on a busy machine, specs that wait for a Server Action can time out; each passed when rerun alone |
+| Statuses for crawlers              | Unknown product, category and legal pages: 404 for Bingbot, Google-InspectionTool, facebookexternalhit, WhatsApp and Twitterbot                      |
+| Statuses for signed-in users       | Unknown admin records, other customers' checkout results and the account area for the owner: 404 in a browser; existing pages 200                    |
+| Cost of the blocking render        | None measured: median 30–66 ms with and without the marker on the same server                                                                        |
+| `pnpm audit --prod` / `pnpm audit` | Clean / two development-only findings                                                                                                                |
 
 ### Known limitations
 
-- Once in two full runs, "settings: the store name and logo show on the storefront at once" saw the old store name on the home page right after saving. It passed 3 of 3 times on its own. The settings actions call `updateTag` correctly; the likely cause is a home page render started by a parallel spec (publishing products) before the save and stored after it. If it recurs, check how Next.js orders an in-flight render against `updateTag`.
-- In the `(secure)` group, an unknown id on a page the signed-in owner or customer can open still answers 200 with the 404 page and `noindex` (DECISIONS, 2026-11-03).
+- "settings: the store name and logo show on the storefront at once" sometimes saw the old name or logo on the home page right after saving: twice in the runs of 2026-11-03 and 2026-11-04, first before the status change above, and only when other owner specs ran in parallel. It passed 3 of 3 times on its own. The settings actions call `updateTag` correctly; the likely cause is a home page render started by a parallel spec (publishing products) before the save and stored after it. If it recurs, check how Next.js orders an in-flight render against `updateTag`.
 - Real sandbox runs with each gateway (SANDBOX_TESTING.md) are still pending.

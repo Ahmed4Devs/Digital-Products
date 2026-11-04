@@ -3,6 +3,7 @@ import { makeSignature } from "better-auth/crypto";
 import createIntlMiddleware from "next-intl/middleware";
 import { NextRequest, NextResponse } from "next/server";
 import { routing } from "@/i18n/routing";
+import { markUserAgent, needsBlockingRender } from "@/lib/proxy/blocking-render";
 import { safeEqual } from "@/lib/security/compare";
 import {
   createNonce,
@@ -85,15 +86,23 @@ async function isOwnerRequest(request: NextRequest, lookUp: OwnerSessionLookup):
  *   own checks can only render the 404 page; this gives everyone else the real status.
  * - Gives the dynamic routes of spec §17.5 §2 a per-request CSP nonce: in the request
  *   headers, where Next.js applies it to its scripts, and in the response policy.
+ * - Marks page loads of those routes for a blocking render, so notFound() and redirect()
+ *   in their pages keep a real 404 or 307 status (see lib/proxy/blocking-render.ts).
  * The account layout, the admin layout and the DAL make the actual decisions.
  */
-/** The request with its nonce policy (Next.js reads the nonce from it), and the policy. */
+/**
+ * The request with its nonce policy (Next.js reads the nonce from it) and, for a page
+ * load, the blocking-render marker; and the policy.
+ */
 function withNonce(request: NextRequest, route: NonceRoute) {
   const nonce = createNonce();
   const policy = noncePolicy(route, nonce, cspContextFromEnv());
   const headers = new Headers(request.headers);
   headers.set("Content-Security-Policy", policy);
   headers.set("x-nonce", nonce);
+  if (needsBlockingRender(request)) {
+    headers.set("user-agent", markUserAgent(request.headers.get("user-agent")));
+  }
   // next-intl reads only the URL and headers. A body-less copy keeps the original
   // request's body (Server Action POSTs) untouched for the app.
   return { request: new NextRequest(request.url, { headers }), headers, policy };
