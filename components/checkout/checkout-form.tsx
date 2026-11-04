@@ -2,7 +2,7 @@
 
 import { LoaderCircleIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { FormAlert } from "@/components/auth/form-alert";
 import { MoneyText } from "@/components/shared/money-text";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,14 @@ export function CheckoutForm({ providers, initialProviderId, initialQuote }: Che
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [redirecting, setRedirecting] = useState(false);
+
+  // A code typed before hydration is in the field but fired no onChange. Without this,
+  // "Apply" would stay disabled until the customer edits the field again.
+  const couponField = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const typed = couponField.current?.value;
+    if (typed) setCouponInput(typed);
+  }, []);
 
   const free = quote.totalUsdCents === 0;
 
@@ -100,6 +108,7 @@ export function CheckoutForm({ providers, initialProviderId, initialQuote }: Che
         <div className="flex gap-2">
           <Input
             id={couponId}
+            ref={couponField}
             value={couponInput}
             onChange={(event) => setCouponInput(event.target.value)}
             autoComplete="off"

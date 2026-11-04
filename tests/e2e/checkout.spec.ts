@@ -39,9 +39,7 @@ test("cart → coupon → fake payment → webhook → My Purchases", async ({ p
   await main(page).getByRole("link", { name: "Checkout" }).click();
   await expect(page).toHaveURL(/\/en\/checkout$/);
   await expect(page.getByRole("radio", { name: /Test payment/ })).toBeChecked();
-  // Typed before hydration, the code would never reach the form's state and "Apply" would
-  // stay disabled.
-  await (await hydrated(page.getByLabel("Coupon code"))).fill(coupon.code.toLowerCase());
+  await page.getByLabel("Coupon code").fill(coupon.code.toLowerCase());
   await (await hydrated(page.getByRole("button", { name: "Apply" }))).click();
   await expect(page.getByText("Coupon applied.")).toBeVisible();
   await expect(
@@ -83,6 +81,35 @@ test("cart → coupon → fake payment → webhook → My Purchases", async ({ p
 test("guests are sent to sign in and come back to checkout", async ({ page }) => {
   await page.goto("/ar/checkout");
   await expect(page).toHaveURL(/\/ar\/sign-in\?next=%2Fcheckout$/);
+});
+
+test("a coupon typed before the page hydrates still applies", async ({ page, baseURL }) => {
+  await signedInCustomer(page, baseURL!);
+  const coupon = await createCoupon(e2eDb(), { type: "percent", value: 50, usageLimit: 10 });
+  await page.goto("/en/products/monthly-budget-planner");
+  await (await hydrated(page.getByRole("button", { name: "Add to cart" }))).click();
+  await expect(page.getByText("Added to your cart.")).toBeVisible();
+
+  // Holding the scripts back keeps the form unhydrated, as on a slow connection.
+  let releaseScripts = () => {};
+  const scripts = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  await page.route("**/_next/static/chunks/*.js", async (route) => {
+    await scripts;
+    await route.continue();
+  });
+  await page.goto("/en/checkout", { waitUntil: "commit" });
+  const input = page.getByLabel("Coupon code");
+  const apply = page.getByRole("button", { name: "Apply" });
+  await input.fill(coupon.code.toLowerCase());
+  await expect(apply).toBeDisabled();
+
+  releaseScripts();
+  await expect(apply).toBeEnabled();
+  await expect(input).toHaveValue(coupon.code.toLowerCase());
+  await apply.click();
+  await expect(page.getByText("Coupon applied.")).toBeVisible();
 });
 
 test("free products are claimed without a gateway", async ({ page, baseURL }) => {
