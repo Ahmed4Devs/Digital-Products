@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { e2eDb } from "@/tests/support/e2e-db";
+import { hydrated } from "@/tests/support/e2e-hydration";
 import { signInContext } from "@/tests/support/e2e-session";
 import { extractLink, waitForMessage } from "@/tests/support/mailpit";
 import { createCustomer, TEST_PASSWORD, uniqueEmail } from "@/tests/support/users";
@@ -37,6 +38,33 @@ test("change the email: confirmed from the new address", async ({ page, baseURL 
   await expect(page).toHaveURL(/\/en\/account\?notice=email-changed$/);
   await expect(page.getByText("Your email address has been changed.")).toBeVisible();
   await expect(main(page)).toContainText(newEmail);
+});
+
+test("a change link opened while signed out confirms the address, then asks to sign in", async ({
+  page,
+  browser,
+  baseURL,
+}) => {
+  await signedInCustomer(page, baseURL!);
+  const newEmail = uniqueEmail("e2e-elsewhere");
+  await page.goto("/en/account");
+  const section = page.getByRole("region", { name: "Email address" });
+  await section.getByLabel("New email").fill(newEmail);
+  await section.getByLabel("Current password").fill(TEST_PASSWORD);
+  await (await hydrated(section.getByRole("button", { name: "Change email" }))).click();
+  await expect(section.getByText(/Check the new address for a confirmation link/)).toBeVisible();
+  const link = extractLink(await waitForMessage(newEmail), "/api/auth/verify-email");
+
+  const elsewhere = await browser.newContext({ baseURL });
+  const other = await elsewhere.newPage();
+  await other.goto(link);
+  await expect(other).toHaveURL(/\/en\/sign-in\?next=/);
+  await other.locator("#sign-in-email").fill(newEmail);
+  await other.locator("#sign-in-password").fill(TEST_PASSWORD);
+  await (await hydrated(other.getByRole("button", { name: "Sign in", exact: true }))).click();
+  await expect(other).toHaveURL(/\/en\/account\?notice=email-changed$/);
+  await expect(other.getByText("Your email address has been changed.")).toBeVisible();
+  await elsewhere.close();
 });
 
 test("change the password: the new one signs in", async ({ page, baseURL, browser }) => {

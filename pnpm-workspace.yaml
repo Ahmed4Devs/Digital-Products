@@ -17,10 +17,22 @@ allowBuilds:
   # from optionalDependencies, so its install-time check is not needed.
   esbuild: false
 
-# Next.js 16.4.5 is a security release taken before pnpm's one-day minimum release age.
-# Exact versions only, with provenance checked against the v16.4.5 tag (DECISIONS).
-# These entries do nothing once those versions are a day old; drop them with the next update.
+# Next.js 16.4.5 and Better Auth 1.7.16 are security releases taken before pnpm's one-day
+# minimum release age. Exact versions only, with provenance checked against their release
+# tags (DECISIONS). These entries do nothing once those versions are a day old; drop them
+# with the next update.
 minimumReleaseAgeExclude:
+  - better-auth@1.7.16
+  - "@better-auth/core@1.7.16"
+  - "@better-auth/drizzle-adapter@1.7.16"
+  - "@better-auth/kysely-adapter@1.7.16"
+  - "@better-auth/memory-adapter@1.7.16"
+  - "@better-auth/mongo-adapter@1.7.16"
+  - "@better-auth/prisma-adapter@1.7.16"
+  - "@better-auth/telemetry@1.7.16"
+  - better-call@1.4.5
+  - eslint-config-next@16.4.5
+  - next@16.4.5
   - "@next/env@16.4.5"
   - "@next/eslint-plugin-next@16.4.5"
   - "@next/swc-darwin-arm64@16.4.5"
@@ -31,8 +43,6 @@ minimumReleaseAgeExclude:
   - "@next/swc-linux-x64-musl@16.4.5"
   - "@next/swc-win32-arm64-msvc@16.4.5"
   - "@next/swc-win32-x64-msvc@16.4.5"
-  - eslint-config-next@16.4.5
-  - next@16.4.5
 
 overrides:
   # react-email's CLI imports glob 13 (and through it minimatch 10) but never calls it;

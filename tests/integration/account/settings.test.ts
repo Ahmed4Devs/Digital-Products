@@ -131,6 +131,8 @@ describe("changing the email", () => {
       email: newEmail,
       emailVerified: true,
     });
+    // Opening the link confirms the address; it never signs anyone in.
+    expect(response.headers.get("set-cookie") ?? "").not.toContain("session_token");
   });
 
   it("answers the same for an address that already has an account, and sends it nothing", async () => {
@@ -144,6 +146,37 @@ describe("changing the email", () => {
     ).toEqual({ status: "success", message: "emailChangeSent" });
     await settleBackgroundTasks();
     expect(await listMessages(other.email)).toEqual([]);
+  });
+
+  it("never lets an old link act on whoever registers the released address", async () => {
+    // GHSA-hwq2-v29r-p69r: a link names the old address, which can change hands.
+    const attacker = await signedIn();
+    const requestChange = async (newEmail: string) => {
+      await actions.changeEmailAction(
+        IDLE,
+        form({ locale: "en", newEmail, password: TEST_PASSWORD }),
+      );
+      await settleBackgroundTasks();
+      const link = extractLink(await waitForMessage(newEmail), "/api/auth/verify-email");
+      return link.slice(link.indexOf("/api/auth") + "/api/auth".length);
+    };
+    const open = (path: string) => callAuth(auth, path);
+
+    const keptNewEmail = uniqueEmail("kept-link");
+    const keptLink = await requestChange(keptNewEmail);
+    const movedTo = uniqueEmail("moved-to");
+    expect((await open(await requestChange(movedTo))).status).toBe(302);
+    expect((await db.user.findUniqueOrThrow({ where: { id: attacker.id } })).email).toBe(movedTo);
+
+    const victim = await createCustomer(db, { email: attacker.email });
+    const response = await open(keptLink);
+
+    expect(response.headers.get("location")).toContain("error=");
+    expect(response.headers.get("set-cookie") ?? "").not.toContain("session_token");
+    expect(await db.session.count({ where: { userId: victim.id } })).toBe(0);
+    expect((await db.user.findUniqueOrThrow({ where: { id: victim.id } })).email).toBe(
+      attacker.email,
+    );
   });
 });
 

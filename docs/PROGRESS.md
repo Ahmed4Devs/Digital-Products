@@ -520,6 +520,7 @@ The local image was built on `node:24-bookworm`: this environment's network poli
 - **Genuine 404 for crawlers that cannot run JavaScript** on unknown product, category and legal pages: they were served the 404 page with status 200 (DECISIONS, 2026-11-03).
 - **Audit:** `pnpm audit --prod` clean again (react-email 6.11.6, fast-uri 3.1.9, an override for the react-email CLI's glob); two development-only findings remain without a usable fix (DECISIONS, SECURITY).
 - **E2E stability:** `tests/support/e2e-hydration.ts` waits until React has hydrated a client component's control before a spec clicks it or presses a key on it (cart, checkout, the fake gateway, the theme toggle). On a busy machine those inputs could arrive before hydration and do nothing.
+- **Better Auth 1.7.16**: security release; it closes an account takeover through old email-change links that applied to this store (DECISIONS, 2026-11-04).
 - **Real 404 and 307 statuses in the `(secure)` group** (2026-11-04): page loads there skip the prerendered shell, so unknown admin records, other customers' checkout results and the account area for the owner answer 404 instead of 200 (DECISIONS, 2026-11-04).
 - **Coupon typed before hydration:** the checkout form now picks up what is already in the field when it hydrates, so "Apply" no longer stays disabled for a customer on a slow connection. An E2E test holds the page's scripts back to reproduce it.
 - **Windows visual baselines** regenerated from the current build (home, sign-in, product); each matches its Linux baseline in size and content.
@@ -529,8 +530,8 @@ The local image was built on `node:24-bookworm`: this environment's network poli
 | Check                              | Result                                                                                                                                               |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Format, lint, typecheck            | Pass                                                                                                                                                 |
-| Vitest                             | 315 unit + 203 integration pass                                                                                                                      |
-| Playwright (Windows)               | 128 tests, all pass with 4 workers. With 8 workers on a busy machine, specs that wait for a Server Action can time out; each passed when rerun alone |
+| Vitest                             | 315 unit + 204 integration pass                                                                                                                      |
+| Playwright (Windows)               | 129 tests, all pass with 4 workers. With 8 workers on a busy machine, specs that wait for a Server Action can time out; each passed when rerun alone |
 | Statuses for crawlers              | Unknown product, category and legal pages: 404 for Bingbot, Google-InspectionTool, facebookexternalhit, WhatsApp and Twitterbot                      |
 | Statuses for signed-in users       | Unknown admin records, other customers' checkout results and the account area for the owner: 404 in a browser; existing pages 200                    |
 | Cost of the blocking render        | None measured: median 30–66 ms with and without the marker on the same server                                                                        |
