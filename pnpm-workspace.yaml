@@ -17,6 +17,23 @@ allowBuilds:
   # from optionalDependencies, so its install-time check is not needed.
   esbuild: false
 
+# Next.js 16.4.5 is a security release taken before pnpm's one-day minimum release age.
+# Exact versions only, with provenance checked against the v16.4.5 tag (DECISIONS).
+# These entries do nothing once those versions are a day old; drop them with the next update.
+minimumReleaseAgeExclude:
+  - "@next/env@16.4.5"
+  - "@next/eslint-plugin-next@16.4.5"
+  - "@next/swc-darwin-arm64@16.4.5"
+  - "@next/swc-darwin-x64@16.4.5"
+  - "@next/swc-linux-arm64-gnu@16.4.5"
+  - "@next/swc-linux-arm64-musl@16.4.5"
+  - "@next/swc-linux-x64-gnu@16.4.5"
+  - "@next/swc-linux-x64-musl@16.4.5"
+  - "@next/swc-win32-arm64-msvc@16.4.5"
+  - "@next/swc-win32-x64-msvc@16.4.5"
+  - eslint-config-next@16.4.5
+  - next@16.4.5
+
 overrides:
   # react-email's CLI imports glob 13 (and through it minimatch 10) but never calls it;
   # glob 14 with minimatch 11 carries the fixes for GHSA-3g3m-2fjr-6pw4 and

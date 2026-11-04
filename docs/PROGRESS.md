@@ -516,7 +516,7 @@ The local image was built on `node:24-bookworm`: this environment's network poli
 
 ### Changed
 
-- **Next.js 16.4.4** (and `eslint-config-next`): patch releases with bug fixes, among them the CSP nonce on Turbopack's runtime bootstrap in the PPR resume.
+- **Next.js 16.4.5** (and `eslint-config-next`): 16.4.3 and 16.4.4 bring bug fixes, among them the CSP nonce on Turbopack's runtime bootstrap in the PPR resume; 16.4.5 is the November security release (DECISIONS, 2026-11-04).
 - **Genuine 404 for crawlers that cannot run JavaScript** on unknown product, category and legal pages: they were served the 404 page with status 200 (DECISIONS, 2026-11-03).
 - **Audit:** `pnpm audit --prod` clean again (react-email 6.11.6, fast-uri 3.1.9, an override for the react-email CLI's glob); two development-only findings remain without a usable fix (DECISIONS, SECURITY).
 - **E2E stability:** `tests/support/e2e-hydration.ts` waits until React has hydrated a client component's control before a spec clicks it or presses a key on it (cart, checkout, the fake gateway, the theme toggle). On a busy machine those inputs could arrive before hydration and do nothing.

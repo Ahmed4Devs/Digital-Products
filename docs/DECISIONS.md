@@ -676,3 +676,9 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 - A client that does not ask for HTML (for example `curl` without an `Accept` header) still gets the shell and a 200 for a missing record; browsers and crawlers ask for HTML.
 - `htmlLimitedBots` replaces Next.js' list, so `lib/proxy/blocking-render.ts` copies it; a unit test compares the copy with Next.js' own and fails after an upgrade that changes it.
 - Rejected: checking each record in the proxy before rendering (Next.js' suggestion for slugs). It would repeat every page's lookups and ownership rules there and miss new pages.
+
+## 2026-11-04 — Next.js 16.4.5 ahead of the release-age gate
+
+**Decision.** Take the November security release (16.4.5) on the day after it came out. pnpm 11 holds back versions younger than one day, so asking for this version added exact-version entries to `minimumReleaseAgeExclude`. Checked before accepting them: the provenance attestation of `next@16.4.5` names the commit of the `v16.4.5` tag and the repository's release workflow, the lockfile's integrity hash equals the registry's, and `eslint-config-next`, `@next/env`, `@next/eslint-plugin-next` and the SWC packages checked (Windows and Linux x64) carry provenance and signatures from the same publisher as 16.4.4. The entries do nothing once the versions are a day old; drop them with the next update.
+
+**Exposure.** The release has seven fixes and no features. By their published conditions, six do not apply here: no `unstable_cache`, no `use cache` function reads a root param, no binary `use cache` arguments, Partial Prefetching is on, no route returns a fetched `Response`, and no Edge routes. The seventh (SVG misclassified as AVIF in the image optimizer) needs a crafted file in the public bucket, which only the owner can upload to. A `use cache` function that reads the locale would bring the first two into play, which 16.4.5 now handles.
