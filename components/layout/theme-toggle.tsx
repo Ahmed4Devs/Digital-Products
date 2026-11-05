@@ -18,9 +18,36 @@ const THEME_OPTIONS = [
   { value: "system", Icon: MonitorIcon },
 ] as const;
 
-export function ThemeToggle() {
+/** The theme choices as menu items, shared by this toggle and the phone menu. */
+export function ThemeOptions({
+  itemClassName,
+  closeOnClick,
+}: {
+  itemClassName?: string;
+  closeOnClick?: boolean;
+}) {
   const t = useTranslations("common.theme");
   const { theme, setTheme } = useTheme();
+
+  return (
+    <DropdownMenuRadioGroup value={theme} onValueChange={(value: string) => setTheme(value)}>
+      {THEME_OPTIONS.map(({ value, Icon }) => (
+        <DropdownMenuRadioItem
+          key={value}
+          value={value}
+          className={itemClassName}
+          closeOnClick={closeOnClick}
+        >
+          <Icon aria-hidden="true" />
+          {t(value)}
+        </DropdownMenuRadioItem>
+      ))}
+    </DropdownMenuRadioGroup>
+  );
+}
+
+export function ThemeToggle() {
+  const t = useTranslations("common.theme");
 
   return (
     <DropdownMenu>
@@ -32,14 +59,7 @@ export function ThemeToggle() {
         <MoonIcon aria-hidden="true" className="hidden dark:block" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-36">
-        <DropdownMenuRadioGroup value={theme} onValueChange={(value: string) => setTheme(value)}>
-          {THEME_OPTIONS.map(({ value, Icon }) => (
-            <DropdownMenuRadioItem key={value} value={value}>
-              <Icon aria-hidden="true" />
-              {t(value)}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
+        <ThemeOptions />
       </DropdownMenuContent>
     </DropdownMenu>
   );

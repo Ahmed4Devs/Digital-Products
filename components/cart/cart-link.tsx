@@ -4,6 +4,7 @@ import { ShoppingCartIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 import { buttonVariants } from "@/components/ui/button";
+import { PHONE_TARGET } from "@/components/layout/phone-target";
 import { Link } from "@/i18n/navigation";
 import { CART_CHANGED, readCartCount } from "./cart-events";
 
@@ -26,7 +27,11 @@ export function CartLink() {
     // The visible word stays part of the accessible name (WCAG 2.5.3 Label in Name).
     <Link
       href="/cart"
-      className={buttonVariants({ variant: "ghost", size: "sm", className: "relative" })}
+      className={buttonVariants({
+        variant: "ghost",
+        size: "sm",
+        className: `relative ${PHONE_TARGET}`,
+      })}
     >
       <ShoppingCartIcon aria-hidden="true" />
       <span className="max-sm:sr-only">{t("link")}</span>

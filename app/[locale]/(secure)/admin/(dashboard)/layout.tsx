@@ -24,16 +24,16 @@ export default async function AdminLayout({ children }: LayoutProps<"/[locale]">
       <div className="flex flex-1 flex-col lg:flex-row">
         <aside className="border-b bg-muted/30 lg:sticky lg:top-0 lg:h-dvh lg:w-60 lg:shrink-0 lg:border-e lg:border-b-0">
           <div className="flex h-16 items-center gap-2 px-4">
-            <Logo className="size-7 text-primary" />
-            <span className="flex flex-col leading-tight">
-              <span className="font-semibold">{branding.name}</span>
+            <Logo className="size-7 shrink-0 text-primary" />
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate font-semibold">{branding.name}</span>
               <span className="text-xs text-muted-foreground">{t("title")}</span>
             </span>
           </div>
           <AdminNav />
         </aside>
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex h-16 items-center justify-end gap-1 border-b px-4 sm:px-6">
+          <header className="flex min-h-16 flex-wrap items-center justify-end gap-1 border-b px-4 py-2 sm:px-6">
             {/* Opens the store in a new tab; the storefront never links back here (spec §11). */}
             <Link
               href="/"

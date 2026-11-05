@@ -11,7 +11,8 @@
     "home": "Home",
     "signIn": "Sign in",
     "account": "My account",
-    "products": "Products"
+    "products": "Products",
+    "menu": "Menu"
   },
   "theme": {
     "label": "Change theme",
