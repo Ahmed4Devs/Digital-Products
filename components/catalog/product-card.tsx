@@ -32,7 +32,7 @@ export async function ProductCard({ product, usdToSarRate, headingLevel = 3 }: P
       />
       <div className="flex flex-1 flex-col gap-2 p-4">
         {category ? <p className="text-xs font-medium text-muted-foreground">{category}</p> : null}
-        <Heading className="font-semibold leading-snug">
+        <Heading className="font-semibold leading-snug wrap-anywhere">
           {/* The stretched link makes the whole card clickable with one tab stop. */}
           <Link
             href={productHref(product.slug)}

@@ -44,7 +44,7 @@ export async function ProductDetailView({
     <article className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6">
       {header}
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <div className="flex flex-col gap-3">
           <ProductImage
             image={product.cover}
@@ -75,7 +75,7 @@ export async function ProductDetailView({
           {categoryName ? (
             <p className="text-sm font-medium text-muted-foreground">{categoryName}</p>
           ) : null}
-          <h1 className="text-3xl font-bold tracking-tight text-balance">
+          <h1 className="text-3xl font-bold tracking-tight text-balance wrap-anywhere">
             <EmojiText text={title} />
           </h1>
           {shortDescription ? (

@@ -73,7 +73,9 @@ export default async function OrdersPage() {
                   <ul aria-label={t("items")} className="flex flex-col gap-1 text-sm">
                     {order.items.map((item) => (
                       <li key={item.id} className="flex justify-between gap-4">
-                        <span>{localized(locale, { ar: item.titleAr, en: item.titleEn })}</span>
+                        <span className="min-w-0 wrap-anywhere">
+                          {localized(locale, { ar: item.titleAr, en: item.titleEn })}
+                        </span>
                         <MoneyText
                           locale={locale}
                           amountMinor={item.unitPriceUsdCents}

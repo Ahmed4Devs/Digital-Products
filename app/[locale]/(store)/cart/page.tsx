@@ -54,11 +54,11 @@ async function CartContents() {
             <li key={item.id} className="flex items-center justify-between gap-4 p-4">
               <Link
                 href={productHref(item.slug)}
-                className="font-medium underline-offset-4 hover:underline"
+                className="min-w-0 font-medium wrap-anywhere underline-offset-4 hover:underline"
               >
                 {title}
               </Link>
-              <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center gap-3">
                 <PriceDisplay
                   priceUsdCents={item.priceUsdCents}
                   fixedPriceSarHalalas={item.fixedPriceSarHalalas}

@@ -57,7 +57,7 @@ export default async function CheckoutPage() {
   }
 
   return (
-    <section className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_24rem]">
+    <section className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="flex flex-col gap-4">
         <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
         {quote.owned.length > 0 ? (
@@ -67,7 +67,7 @@ export default async function CheckoutPage() {
         <ul className="flex flex-col divide-y rounded-xl border">
           {quote.items.map((item) => (
             <li key={item.id} className="flex items-center justify-between gap-4 p-4">
-              <span className="font-medium">
+              <span className="min-w-0 font-medium wrap-anywhere">
                 {localized(locale, { ar: item.titleAr, en: item.titleEn })}
               </span>
               <MoneyText locale={locale} amountMinor={item.priceUsdCents} currency="USD" />

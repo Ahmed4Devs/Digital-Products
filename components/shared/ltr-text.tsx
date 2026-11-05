@@ -5,5 +5,9 @@ import type { ReactNode } from "react";
  * reordered inside right-to-left Arabic text. Use for any LTR value embedded in a sentence.
  */
 export function LtrText({ children }: { children: ReactNode }) {
-  return <bdi dir="ltr">{children}</bdi>;
+  return (
+    <bdi dir="ltr" className="wrap-anywhere">
+      {children}
+    </bdi>
+  );
 }

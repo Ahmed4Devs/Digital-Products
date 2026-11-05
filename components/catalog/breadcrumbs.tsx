@@ -7,7 +7,7 @@ type Crumb = { label: string; href?: string };
 
 export function Breadcrumbs({ label, items }: { label: string; items: Crumb[] }) {
   return (
-    <nav aria-label={label} className="text-sm text-muted-foreground">
+    <nav aria-label={label} className="text-sm wrap-anywhere text-muted-foreground">
       <ol className="flex flex-wrap items-center gap-1">
         {items.map((item, index) => (
           <Fragment key={`${index}-${item.label}`}>
