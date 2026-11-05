@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { PHONE_TARGET } from "./phone-target";
+import { TOUCH_TARGET } from "./touch-target";
 
 type SessionResponse = { user?: { role?: unknown } } | null;
 
@@ -35,7 +35,7 @@ export function AccountLink() {
   return (
     <Link
       href={signedIn ? "/account" : "/sign-in"}
-      className={buttonVariants({ variant: "ghost", size: "sm", className: PHONE_TARGET })}
+      className={buttonVariants({ variant: "ghost", size: "sm", className: TOUCH_TARGET })}
     >
       <UserRoundIcon aria-hidden="true" />
       <span className="max-sm:sr-only">{t(signedIn ? "account" : "signIn")}</span>

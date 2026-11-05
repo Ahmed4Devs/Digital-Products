@@ -41,7 +41,7 @@ export async function SiteFooter() {
               <li key={slug}>
                 <Link
                   href={legalHref(slug)}
-                  className="underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+                  className="underline-offset-4 outline-none hover:text-foreground hover:underline focus-visible:ring-3 focus-visible:ring-ring/50 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
                 >
                   {t(`footer.links.${slug}`)}
                 </Link>

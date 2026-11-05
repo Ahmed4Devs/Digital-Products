@@ -73,7 +73,7 @@ export default async function AdminProductsPage({
       >
         <Link
           href={hrefFor(search, { sort, dir: nextDir, page: 1 })}
-          className="inline-flex items-center gap-1 rounded-sm underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+          className="inline-flex items-center gap-1 rounded-sm underline-offset-4 max-sm:min-h-11 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
         >
           {label}
           {active ? (

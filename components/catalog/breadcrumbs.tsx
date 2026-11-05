@@ -20,7 +20,7 @@ export function Breadcrumbs({ label, items }: { label: string; items: Crumb[] })
               {item.href ? (
                 <Link
                   href={item.href}
-                  className="underline-offset-4 hover:text-foreground hover:underline"
+                  className="underline-offset-4 hover:text-foreground hover:underline max-sm:inline-flex max-sm:min-h-11 max-sm:items-center"
                 >
                   <EmojiText text={item.label} />
                 </Link>

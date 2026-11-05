@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "./language-switcher";
-import { PHONE_TARGET } from "./phone-target";
+import { TOUCH_TARGET } from "./touch-target";
 import { ThemeOptions } from "./theme-toggle";
 
 const ITEM = "min-h-11";
@@ -32,7 +32,7 @@ export function PhoneMenu() {
             size="icon"
             aria-label={t("nav.menu")}
             title={t("nav.menu")}
-            className={PHONE_TARGET}
+            className={TOUCH_TARGET}
           />
         }
       >

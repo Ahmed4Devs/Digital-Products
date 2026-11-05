@@ -94,7 +94,7 @@ async function CategoryContent({
           {products.length > CATEGORY_PAGE_LIMIT ? (
             <Link
               href={{ pathname: "/products", query: { category: category.slug } }}
-              className="self-center text-sm font-medium text-primary underline-offset-4 hover:underline"
+              className="self-center text-sm font-medium text-primary max-sm:inline-flex max-sm:min-h-11 max-sm:items-center underline-offset-4 hover:underline"
             >
               {t("viewAllInCategory")}
             </Link>

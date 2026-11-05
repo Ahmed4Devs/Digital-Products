@@ -17,7 +17,7 @@ export default async function NewCouponPage() {
     <div className="flex flex-col gap-6">
       <Link
         href="/admin/coupons"
-        className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="inline-flex w-fit items-center gap-1 text-sm max-sm:min-h-11 text-muted-foreground underline-offset-4 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <ArrowLeftIcon aria-hidden="true" className="size-4 rtl:-scale-x-100" />
         {t("back")}

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, type ReactElement } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { Link, usePathname } from "@/i18n/navigation";
+import { TOUCH_TARGET } from "./touch-target";
 
 function otherLocale(locale: Locale): Locale {
   return locale === "ar" ? "en" : "ar";
@@ -29,7 +30,11 @@ function SwitchLink({ query, render }: SwitchLinkProps) {
       hrefLang={target}
       // The accessible name stays the visible language name (WCAG 2.5.3 Label in Name).
       title={t("switchTo")}
-      className={render ? undefined : buttonVariants({ variant: "ghost", size: "sm" })}
+      className={
+        render
+          ? undefined
+          : buttonVariants({ variant: "ghost", size: "sm", className: TOUCH_TARGET })
+      }
     >
       <span lang={target}>{t(`name.${target}`)}</span>
     </Link>

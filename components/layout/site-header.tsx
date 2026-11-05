@@ -9,6 +9,7 @@ import { LanguageSwitcher } from "./language-switcher";
 import { Logo } from "./logo";
 import { PhoneMenu } from "./phone-menu";
 import { ThemeToggle } from "./theme-toggle";
+import { TOUCH_TARGET } from "./touch-target";
 
 export async function SiteHeader() {
   const [t, branding] = await Promise.all([getTranslations("common"), getStoreBranding()]);
@@ -51,7 +52,10 @@ export async function SiteHeader() {
             )}
           </Link>
           <nav aria-label={t("nav.primary")} className="shrink-0 max-sm:hidden">
-            <Link href="/products" className={buttonVariants({ variant: "ghost", size: "sm" })}>
+            <Link
+              href="/products"
+              className={buttonVariants({ variant: "ghost", size: "sm", className: TOUCH_TARGET })}
+            >
               {t("nav.products")}
             </Link>
           </nav>

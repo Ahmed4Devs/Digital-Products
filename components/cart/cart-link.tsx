@@ -4,7 +4,7 @@ import { ShoppingCartIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSyncExternalStore } from "react";
 import { buttonVariants } from "@/components/ui/button";
-import { PHONE_TARGET } from "@/components/layout/phone-target";
+import { TOUCH_TARGET } from "@/components/layout/touch-target";
 import { Link } from "@/i18n/navigation";
 import { CART_CHANGED, readCartCount } from "./cart-events";
 
@@ -30,7 +30,7 @@ export function CartLink() {
       className={buttonVariants({
         variant: "ghost",
         size: "sm",
-        className: `relative ${PHONE_TARGET}`,
+        className: `relative ${TOUCH_TARGET}`,
       })}
     >
       <ShoppingCartIcon aria-hidden="true" />

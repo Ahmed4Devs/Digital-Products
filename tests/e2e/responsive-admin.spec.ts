@@ -109,6 +109,19 @@ test.describe("on a phone", () => {
     }
   });
 
+  test("the emoji picker stays on the screen", async ({ page }) => {
+    await page.goto("/en/admin/products/new");
+    const title = page.getByRole("tabpanel", { name: "Arabic" });
+    await tap(await hydrated(title.getByRole("button", { name: "Insert emoji" }).first()));
+    const picker = page.getByRole("dialog");
+    await expect(picker).toBeVisible();
+    const box = await picker.boundingBox();
+    expect(box?.y).toBeGreaterThanOrEqual(0);
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(568);
+    expect(box?.x).toBeGreaterThanOrEqual(0);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(320);
+  });
+
   test("a confirmation fits the screen and keeps both of its buttons", async ({ page }) => {
     const { order } = await paidOrder();
     await page.goto(`/en/admin/orders/${order.id}`);

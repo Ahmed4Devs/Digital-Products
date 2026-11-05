@@ -4,6 +4,7 @@ import { MonitorIcon, MoonIcon, SunIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { TOUCH_TARGET } from "./touch-target";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,7 +53,15 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="ghost" size="icon" aria-label={t("label")} title={t("label")} />}
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("label")}
+            title={t("label")}
+            className={TOUCH_TARGET}
+          />
+        }
       >
         {/* CSS picks the icon, so the server and client markup always match. */}
         <SunIcon aria-hidden="true" className="dark:hidden" />

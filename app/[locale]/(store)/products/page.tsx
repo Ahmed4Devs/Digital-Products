@@ -55,7 +55,7 @@ async function ProductResults({ searchParams }: { searchParams: Promise<SearchPa
           {filtered || search.page > 1 ? (
             <Link
               href="/products"
-              className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              className="text-sm font-medium text-primary underline-offset-4 max-sm:inline-flex max-sm:min-h-11 max-sm:items-center hover:underline"
             >
               {t("clearFilters")}
             </Link>

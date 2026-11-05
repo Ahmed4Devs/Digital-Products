@@ -80,6 +80,52 @@ for (const { name, width, height } of SCREENS) {
   });
 }
 
+test.describe("on a touch screen", () => {
+  test.describe("tablet", () => {
+    test.use({ viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true });
+
+    test("the header's controls fill a finger", async ({ page }) => {
+      await page.goto("/en");
+      const banner = page.getByRole("banner");
+      for (const control of [
+        banner.getByRole("link", { name: "Products" }),
+        banner.getByRole("link", { name: "Cart" }),
+        banner.getByRole("link", { name: "Sign in" }),
+        banner.getByRole("link", { name: "العربية" }),
+        banner.getByRole("button", { name: "Change theme" }),
+      ]) {
+        expect((await control.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+      }
+    });
+  });
+
+  test.describe("phone", () => {
+    test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+    test("links a finger has to hit are tall enough", async ({ page }) => {
+      await page.goto("/en/products/monthly-budget-planner");
+      for (const link of [
+        page.getByRole("navigation", { name: "Store information" }).getByRole("link").first(),
+        page.getByRole("main").getByRole("navigation").getByRole("link").first(),
+      ]) {
+        expect((await link.boundingBox())?.height).toBeGreaterThanOrEqual(44);
+      }
+    });
+
+    test("the filters are large enough that iOS does not zoom on focus", async ({ page }) => {
+      await page.goto("/en/products");
+      for (const field of [
+        page.getByLabel("Search"),
+        page.getByLabel("Category"),
+        page.getByLabel("Sort by"),
+      ]) {
+        const size = await field.evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+        expect(size).toBeGreaterThanOrEqual(16);
+      }
+    });
+  });
+});
+
 test.describe("the header on a phone", () => {
   test.use({ viewport: { width: 320, height: 568 }, isMobile: true, hasTouch: true });
 
