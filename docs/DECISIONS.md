@@ -691,3 +691,14 @@ Zero total is decided on the USD total (§17.5 §6): such orders get no provider
 
 - **Behaviour change:** opening a change link no longer signs anyone in. In a browser with no session, the address changes and the customer lands on sign-in, then on the confirmation notice. An E2E test covers this path.
 - **Not applicable:** the other advisories concern secondary storage, passkeys, two-factor and device authorization with the cookie cache, phone numbers, organizations, Stripe, OAuth providers and MySQL serial ids, none of which this store uses. The documented five-minute window of the cookie cache stays (SECURITY.md).
+
+## 2026-11-05 — Phones and tablets
+
+**Finding.** Every E2E spec ran at desktop width, so nothing noticed that the store's header needed 421-463px, wider than every common phone. An audit of 50 pages at 11 sizes in both languages, with touch, on Chromium and WebKit, found the store's pages overflowing sideways on phones (1,016 of 1,400 page checks). It also found overflowing dashboard pages, legal-page tabs that a tap could miss, and long text that widened pages on every device.
+
+**Decision.**
+
+- **Header on a phone (under 640px):** the logo and store name on one line, the cart, the account and a menu that holds the products, the language and the theme. Even as icons, all of them do not fit 320px. From 640px up the header is unchanged.
+- **Touch targets:** the header's controls are 44px on any touch screen through `pointer-coarse`, so tablets get them and a mouse keeps the compact ones. Other small links grow on phones only, so desktop layouts and their visual baselines stay as they are.
+- **Long text:** `body` breaks a word that would leave its box, and titles, emails and rich text use `wrap-anywhere` so they cannot stretch a flex or grid parent either. One-column grids use `grid-cols-1`, because an implicit column grows to its content and stops a table from scrolling in its own box. Code in rich text wraps rather than scrolls.
+- **Regression tests:** `responsive.spec.ts` and `responsive-admin.spec.ts` run with the suite. They run on Chromium; they also passed on WebKit, which is not part of the suite because it needs a separate browser download.
