@@ -121,7 +121,7 @@ export default async function AdminOverviewPage() {
         </p>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <section aria-labelledby="overview-top" className="flex flex-col gap-3">
           <h2 id="overview-top" className="text-lg font-semibold">
             {t("topProducts", { days: SALES_WINDOW_DAYS })}

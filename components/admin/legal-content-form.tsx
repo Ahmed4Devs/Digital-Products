@@ -64,9 +64,9 @@ export function LegalContentForm({ texts }: { texts: LegalTexts }) {
   const pages = Object.keys(texts) as LegalPage[];
   return (
     <Tabs defaultValue={pages[0]}>
-      <TabsList aria-label={t("pagesLabel")} className="flex-wrap">
+      <TabsList aria-label={t("pagesLabel")} className="h-auto flex-wrap">
         {pages.map((page) => (
-          <TabsTrigger key={page} value={page}>
+          <TabsTrigger key={page} value={page} className="max-sm:min-h-11">
             {t(`pages.${page}`)}
           </TabsTrigger>
         ))}

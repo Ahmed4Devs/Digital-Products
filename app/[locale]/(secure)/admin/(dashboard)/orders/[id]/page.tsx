@@ -110,11 +110,11 @@ export default async function AdminOrderPage({ params }: PageProps<"/[locale]/ad
         <h2 id="order-summary" className="text-lg font-semibold">
           {t("summary")}
         </h2>
-        <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[max-content_1fr]">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-[max-content_minmax(0,1fr)]">
           {facts.map(({ label, value }) => (
             <div key={label} className="contents">
               <dt className="text-sm text-muted-foreground">{label}</dt>
-              <dd className="text-sm break-words">{value}</dd>
+              <dd className="text-sm wrap-anywhere">{value}</dd>
             </div>
           ))}
         </dl>
